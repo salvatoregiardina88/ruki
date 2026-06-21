@@ -1,0 +1,88 @@
+﻿RUKI PRIVACY POLICY
+
+Last updated: 21 June 2026 - App version: 0.1.0
+Data controller: Salvatore Giardina - contact: salvatoregiardina88@gmail.com
+
+
+1. IN SHORT
+
+Ruki is an application that runs entirely on your computer. The maker of Ruki does not collect,
+does not receive and does not store your data: there are no Ruki servers. Your data stays on your
+device, except for what - in order to provide its AI features - is sent to Google Gemini using your
+own Google key/account, plus a minimal update check to GitHub.
+
+
+2. DATA PROCESSED AND WHERE IT STAYS (on your device)
+
+Everything under your user folder (%APPDATA%\Ruki):
+- Google Gemini API key: stored encrypted (Windows DPAPI, tied to your Windows account) and used
+  only to authenticate you with Google. It never leaves your PC except as an authentication header
+  to Google.
+- App settings.
+- Learned memories and user profile (local database).
+- Teaching sessions: screen (images/video), microphone audio, PC events (clicks, typed text, window
+  changes) and the session's chat messages.
+- Technical logs and the count of tokens used (for the cost estimate).
+
+
+3. DATA SENT TO THIRD PARTIES
+
+- Google Gemini (Google). To reply in chat, learn from sessions and perform tasks, Ruki sends to
+  Google Gemini - using your key/your account - the chat messages, screenshots/recordings, audio,
+  events and relevant memories. This processing happens within YOUR relationship with Google:
+  Google's privacy policy and the Gemini API terms apply. Note: on the free tier Google may use the
+  data to improve its products; on the paid tier it generally does not. Refer to Google's official
+  pages for privacy and pricing.
+- GitHub (update check). At startup Ruki may check for a new version by querying the public releases
+  on GitHub: this is a normal web request (which, like any connection, involves sending your IP
+  address to GitHub). No personal data is sent intentionally; the feature can be disabled in the
+  settings.
+
+Ruki uses no analytics/telemetry, sends no data to the maker, and sells data to no one.
+
+
+4. PASSWORD FIELDS
+
+During teaching, Ruki masks password fields (detected via Windows accessibility): characters typed
+into passwords are not recorded or sent. Due to technical limits, coverage is not guaranteed to be
+100% (some applications do not expose this information): avoid typing highly sensitive credentials
+during teaching.
+
+
+5. RETENTION AND YOUR CONTROL
+
+- You can delete memories and profile from the Memory section, discard an ongoing recording (the
+  session's data is deleted) and remove the API key from the settings.
+- Old sessions are deleted automatically beyond a configurable number.
+- Uninstalling removes the application; the data in your user folder remains on your PC and you can
+  delete it manually.
+
+
+6. USER RESPONSIBILITY
+
+You are responsible for what you show and record with Ruki. Do not train Ruki on confidential or
+personal data of third parties without being entitled to do so.
+
+
+7. MINORS
+
+Ruki is not intended for children under 14.
+
+
+8. YOUR RIGHTS
+
+Because the data is local and/or processed through your own Google account, you can review and
+delete it directly on your device. For data processed by Google, exercise your rights (access,
+deletion, etc.) with Google. For questions about this policy, write to
+salvatoregiardina88@gmail.com.
+
+
+9. CHANGES
+
+This policy may be updated: the version in force is the one distributed with the application. The
+date at the top indicates the last update.
+
+
+10. CONTACT
+
+Salvatore Giardina - salvatoregiardina88@gmail.com

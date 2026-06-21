@@ -1,0 +1,16 @@
+<Window x:Class="Ruki.App.Views.ClickIndicatorWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="44" Height="44"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        Topmost="True"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        ResizeMode="NoResize"
+        IsHitTestVisible="False"
+        WindowStartupLocation="Manual">
+    <!-- Anello rosso; il riempimento viene attivato dal code-behind per segnalare il click. -->
+    <Ellipse x:Name="Ring" Stroke="#FFFF2D2D" StrokeThickness="4" Fill="Transparent" Margin="2" />
+</Window>

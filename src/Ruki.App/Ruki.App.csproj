@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ruki.Core\Ruki.Core.csproj" />
+    <ProjectReference Include="..\Ruki.Infrastructure\Ruki.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Logo dell'app: per cambiarlo, sostituire questo file (src/Ruki.App/Assets/Logo.png). -->
+    <Resource Include="Assets\Logo.png" />
+    <!-- Informativa privacy (IT/EN): mostrata in-app e usata dall'installer come licenza da accettare. -->
+    <Resource Include="Assets\privacy_it.txt" />
+    <Resource Include="Assets\privacy_en.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.9" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.Debug" Version="3.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- Versione SDK Windows allineata a Ruki.Infrastructure (necessaria per le API WinRT). -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- Icona dell'eseguibile (generata da build/make_icon.ps1 a partire dal logo). -->
+    <ApplicationIcon>Assets\Logo.ico</ApplicationIcon>
+  </PropertyGroup>
+
+</Project>

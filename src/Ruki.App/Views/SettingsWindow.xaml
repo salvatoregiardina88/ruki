@@ -1,0 +1,202 @@
+<Window x:Class="Ruki.App.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:Ruki.App.Views"
+        xmlns:loc="clr-namespace:Ruki.App.Localization"
+        Title="{loc:Loc Title_Settings}"
+        Icon="/Assets/Logo.png"
+        Width="640" Height="600"
+        Background="{StaticResource RukiBackground}"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize">
+
+    <Window.Resources>
+        <!-- Spaziatura verticale comune alle righe del form. -->
+        <Thickness x:Key="RowMargin">0,6,0,0</Thickness>
+        <Style TargetType="TextBlock" x:Key="FieldLabel">
+            <Setter Property="Margin" Value="0,10,0,2" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+        <!-- Sezione raggruppata nel tab Avanzate. -->
+        <Style TargetType="GroupBox" x:Key="Section">
+            <Setter Property="Padding" Value="10,6,10,10" />
+            <Setter Property="Margin" Value="0,0,0,12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TabControl Grid.Row="0">
+
+            <!-- ============================ TAB API ============================ -->
+            <!-- Solo la chiave API: è l'unica cosa che l'utente deve davvero impostare. -->
+            <TabItem Header="{loc:Loc Settings_TabApi}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="12">
+
+                        <TextBlock Text="{loc:Loc Settings_ApiKey}" Style="{StaticResource FieldLabel}" />
+                        <TextBlock Foreground="{StaticResource RukiSubtleText}" TextWrapping="Wrap" FontSize="11"
+                                   Text="{loc:Loc Settings_ApiKeyHint}" />
+                        <PasswordBox x:Name="ApiKeyBox" Margin="{StaticResource RowMargin}" />
+
+                        <!-- Aiuto: tutorial su come ottenere la chiave (apre un video). -->
+                        <TextBlock FontSize="11" Margin="0,6,0,0">
+                            <Hyperlink Click="OnApiKeyHelpClick">
+                                <Run Text="{loc:Loc Settings_ApiKeyHelp}" />
+                            </Hyperlink>
+                        </TextBlock>
+
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <TextBlock Text="{loc:Loc Settings_Status}" Margin="0,0,6,0" />
+                            <TextBlock>
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="{loc:Loc Settings_NoKey}" />
+                                        <Setter Property="Foreground" Value="#B00020" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsApiKeyConfigured}" Value="True">
+                                                <Setter Property="Text" Value="{loc:Loc Settings_KeyConfigured}" />
+                                                <Setter Property="Foreground" Value="#107C10" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <Button Content="{loc:Loc Settings_RemoveKey}" Margin="12,0,0,0" Padding="8,2"
+                                    Command="{Binding RemoveApiKeyCommand}"
+                                    IsEnabled="{Binding IsApiKeyConfigured}" />
+                        </StackPanel>
+
+                        <!-- Informativa privacy (testo incorporato nell'app). -->
+                        <TextBlock Margin="0,18,0,0" FontSize="11">
+                            <Hyperlink Click="OnPrivacyClick"><Run Text="{loc:Loc Settings_Privacy}" /></Hyperlink>
+                        </TextBlock>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ========================= TAB AVANZATE ========================== -->
+            <!-- Tutto il resto, raggruppato in sezioni: l'utente base sa di non doverlo toccare. -->
+            <TabItem Header="{loc:Loc Settings_TabAdvanced}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="12">
+
+                        <!-- Modello e lingua -->
+                        <GroupBox Header="{loc:Loc Settings_SecModelLang}" Style="{StaticResource Section}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Loc Settings_Language}" Style="{StaticResource FieldLabel}" />
+                                <ComboBox SelectedValue="{Binding UiLanguage}" SelectedValuePath="Tag">
+                                    <ComboBoxItem Content="Italiano" Tag="it" />
+                                    <ComboBoxItem Content="English" Tag="en" />
+                                </ComboBox>
+
+                                <TextBlock Text="{loc:Loc Settings_Model}" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding GeminiModel, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- Registrazione (insegnamento) -->
+                        <GroupBox Header="{loc:Loc Settings_SecRecording}" Style="{StaticResource Section}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Loc Settings_Fps}" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding ScreenCaptureFps, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock Text="{loc:Loc Settings_MaxSession}" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding MaxSessionMinutes, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock Text="{loc:Loc Settings_MaxSessions}" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding MaxStoredSessions, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- Memoria -->
+                        <GroupBox Header="{loc:Loc Settings_SecMemory}" Style="{StaticResource Section}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Loc Settings_MaintInterval}" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding MemoryMaintenanceIntervalHours, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock Text="{loc:Loc Settings_ObsoleteDays}" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding ObsoleteAfterDays, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock Text="{loc:Loc Settings_ObsoleteUses}" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding ObsoleteMaxUses, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock Text="{loc:Loc Settings_TreeDepth}" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding MemoryTreeDepth, UpdateSourceTrigger=PropertyChanged}" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- Esecuzione azioni -->
+                        <GroupBox Header="{loc:Loc Settings_SecActions}" Style="{StaticResource Section}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Loc Settings_MaxSteps}" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding MaxActionSteps, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <CheckBox Content="{loc:Loc Settings_ConfirmRisky}" FontWeight="Normal"
+                                          IsChecked="{Binding ConfirmRiskyActions}" Margin="0,14,0,0" />
+                                <CheckBox Content="{loc:Loc Settings_DebugMode}" FontWeight="Normal"
+                                          IsChecked="{Binding DebugMode}" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- Stima costi (tariffe per la stima mostrata nell'overlay) -->
+                        <GroupBox Header="{loc:Loc Settings_SecCosts}" Style="{StaticResource Section}">
+                            <StackPanel>
+                                <TextBlock Text="{loc:Loc Settings_PriceInput}" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding TokenPriceInputPerMillion, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock Text="{loc:Loc Settings_PriceOutput}" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding TokenPriceOutputPerMillion, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <TextBlock Text="{loc:Loc Settings_Currency}" Style="{StaticResource FieldLabel}" />
+                                <TextBox Text="{Binding CostCurrencySymbol, UpdateSourceTrigger=PropertyChanged}" MaxLength="3" Width="60" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </GroupBox>
+
+                        <!-- Avvio -->
+                        <GroupBox Header="{loc:Loc Settings_SecStartup}" Style="{StaticResource Section}">
+                            <StackPanel>
+                                <CheckBox Content="{loc:Loc Settings_RunAtStartup}" FontWeight="Normal"
+                                          IsChecked="{Binding RunAtStartup}" Margin="0,4,0,0" />
+                                <CheckBox Content="{loc:Loc Settings_CheckUpdates}" FontWeight="Normal"
+                                          IsChecked="{Binding CheckForUpdatesOnStartup}" Margin="0,8,0,0" />
+                            </StackPanel>
+                        </GroupBox>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ========================== TAB MEMORIA ========================== -->
+            <TabItem Header="{loc:Loc Settings_TabMemory}">
+                <views:MemoryView DataContext="{Binding Memory}" Margin="8" />
+            </TabItem>
+
+        </TabControl>
+
+        <!-- Barra inferiore: stato + salva -->
+        <Grid Grid.Row="1" Margin="0,12,0,0">
+            <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <!-- Verde di default (esito positivo), rosso se l'operazione è in errore. -->
+                        <Setter Property="Foreground" Value="#107C10" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding StatusIsError}" Value="True">
+                                <Setter Property="Foreground" Value="#B00020" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
+            <Button Content="{loc:Loc Common_Save}" HorizontalAlignment="Right" Padding="18,6"
+                    IsDefault="True" Click="OnSaveClick" />
+        </Grid>
+    </Grid>
+</Window>

@@ -1,0 +1,90 @@
+﻿INFORMATIVA SULLA PRIVACY DI RUKI
+
+Ultimo aggiornamento: 21 giugno 2026 - Versione app: 0.1.0
+Titolare del trattamento: Salvatore Giardina - contatto: salvatoregiardina88@gmail.com
+
+
+1. IN BREVE
+
+Ruki è un'applicazione che gira interamente sul tuo computer. Il produttore di Ruki non raccoglie,
+non riceve e non conserva i tuoi dati: non esistono server di Ruki. I tuoi dati restano sul tuo
+dispositivo, tranne ciò che - per far funzionare le sue funzioni di intelligenza artificiale -
+viene inviato a Google Gemini usando la tua chiave/account Google, e una minima verifica degli
+aggiornamenti verso GitHub.
+
+
+2. DATI TRATTATI E DOVE RESTANO (sul tuo dispositivo)
+
+Tutto sotto la cartella dell'utente (%APPDATA%\Ruki):
+- Chiave API di Google Gemini: salvata cifrata (DPAPI di Windows, legata al tuo account Windows) e
+  usata solo per autenticarti verso Google. Non lascia mai il tuo PC se non come intestazione di
+  autenticazione verso Google.
+- Impostazioni dell'app.
+- Memorie apprese e profilo utente (database locale).
+- Sessioni di addestramento: schermo (immagini/video), audio del microfono, eventi del PC (click,
+  testo digitato, cambi di finestra) e messaggi di chat della sessione.
+- Log tecnici e conteggio dei token consumati (per la stima dei costi).
+
+
+3. DATI INVIATI A TERZI
+
+- Google Gemini (Google). Per rispondere in chat, imparare dalle sessioni ed eseguire i compiti,
+  Ruki invia a Google Gemini - tramite la tua chiave/il tuo account - i messaggi di chat, gli
+  screenshot/registrazioni, l'audio, gli eventi e le memorie pertinenti. Questo trattamento avviene
+  nell'ambito del tuo rapporto con Google: fanno fede l'informativa privacy di Google e i termini
+  dell'API Gemini. Nota: sul piano gratuito Google può usare i dati per migliorare i propri
+  prodotti; sul piano a pagamento di norma no. Per privacy e costi fai riferimento alle pagine
+  ufficiali di Google.
+- GitHub (verifica aggiornamenti). All'avvio Ruki può controllare se esiste una nuova versione
+  interrogando le release pubbliche su GitHub: è una normale richiesta web (che comporta, come
+  qualsiasi connessione, l'invio del tuo indirizzo IP a GitHub). Non vengono inviati dati personali
+  in modo intenzionale; la funzione è disattivabile dalle impostazioni.
+
+Ruki non usa sistemi di analisi/telemetria, non invia dati al produttore e non vende dati a nessuno.
+
+
+4. CAMPI PASSWORD
+
+Durante l'addestramento Ruki maschera i campi password (rilevati tramite l'accessibilità di
+Windows): i caratteri digitati nelle password non vengono registrati né inviati. Per limiti tecnici
+la copertura non è garantita al 100% (alcune applicazioni non espongono questa informazione): evita
+di digitare credenziali molto sensibili durante l'addestramento.
+
+
+5. CONSERVAZIONE E TUO CONTROLLO
+
+- Puoi eliminare memorie e profilo dalla sezione Memoria, annullare una registrazione in corso (i
+  dati della sessione vengono cancellati) e rimuovere la chiave API dalle impostazioni.
+- Le vecchie sessioni vengono eliminate automaticamente oltre un numero configurabile.
+- La disinstallazione rimuove l'applicazione; i dati nella cartella dell'utente restano sul tuo PC e
+  puoi eliminarli manualmente.
+
+
+6. RESPONSABILITÀ DELL'UTENTE
+
+Sei responsabile di ciò che mostri e registri con Ruki. Non addestrare Ruki su dati riservati o
+personali di terzi senza averne diritto.
+
+
+7. MINORI
+
+Ruki non è destinata a minori di 14 anni.
+
+
+8. I TUOI DIRITTI
+
+Poiché i dati sono locali e/o trattati tramite il tuo account Google, puoi consultarli ed eliminarli
+direttamente sul tuo dispositivo. Per i dati elaborati da Google, esercita i tuoi diritti (accesso,
+cancellazione, ecc.) presso Google. Per domande relative a questa informativa scrivi a
+salvatoregiardina88@gmail.com.
+
+
+9. MODIFICHE
+
+Questa informativa può essere aggiornata: la versione in vigore è quella distribuita con
+l'applicazione. La data in alto indica l'ultimo aggiornamento.
+
+
+10. CONTATTI
+
+Salvatore Giardina - salvatoregiardina88@gmail.com

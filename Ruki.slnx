@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Ruki.App/Ruki.App.csproj" />
+    <Project Path="src/Ruki.Core/Ruki.Core.csproj" />
+    <Project Path="src/Ruki.Infrastructure/Ruki.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Ruki.Tests/Ruki.Tests.csproj" />
+  </Folder>
+</Solution>

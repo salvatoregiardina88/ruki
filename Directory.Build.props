@@ -1,0 +1,30 @@
+<Project>
+
+  <!--
+    Proprietà comuni a tutti i progetti della soluzione Ruki.
+    Centralizzare qui le impostazioni evita duplicazione nei singoli .csproj
+    e tiene un solo punto di verità per linguaggio, metadati e regole di build.
+  -->
+  <PropertyGroup>
+    <!-- Usa sempre l'ultima versione del linguaggio C# supportata dall'SDK. -->
+    <LangVersion>latest</LangVersion>
+    <!-- Null-safety attiva ovunque: parte fondamentale della robustezza del codice. -->
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Metadati di prodotto, riusati negli assembly e (in futuro) nell'installer. -->
+    <Product>Ruki</Product>
+    <Company>Ruki</Company>
+    <Authors>Ruki</Authors>
+    <Version>0.1.0</Version>
+    <NeutralLanguage>it-IT</NeutralLanguage>
+
+    <!--
+      Gli warning di nullability vengono trattati come errori: in un codice
+      "production ready" non vogliamo lasciar passare potenziali NullReferenceException.
+      Gli altri warning restano warning per non bloccare lo sviluppo iterativo.
+    -->
+    <WarningsAsErrors>nullable</WarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

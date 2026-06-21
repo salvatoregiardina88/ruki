@@ -1,0 +1,14 @@
+<Window x:Class="Ruki.App.Views.ImageViewerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:Ruki.App.Localization"
+        Title="{loc:Loc Title_Image}"
+        Icon="/Assets/Logo.png"
+        Width="1100" Height="750"
+        WindowState="Maximized"
+        Background="{StaticResource RukiBackground}">
+    <!-- Immagine a risoluzione nativa, scorribile: piena qualità per leggere il testo. -->
+    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+        <Image x:Name="ViewerImage" Stretch="None" />
+    </ScrollViewer>
+</Window>

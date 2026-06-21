@@ -1,0 +1,254 @@
+<Window x:Class="Ruki.App.Views.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:Ruki.App.Localization"
+        Title="Ruki"
+        Icon="/Assets/Logo.png"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        SizeToContent="WidthAndHeight"
+        WindowStartupLocation="Manual">
+
+    <!--
+        Overlay: piccola barra fluttuante chiara, sempre in primo piano e senza bordo di sistema,
+        con un contorno "arcobaleno" che la rende riconoscibile. È trascinabile afferrando la
+        maniglia a sinistra (DragHandle); i pulsanti aprono le sezioni dell'app.
+    -->
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <!-- Stile piatto per i pulsanti (tema chiaro): angoli arrotondati ed evidenziazione all'hover. -->
+        <Style x:Key="OverlayButton" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource RukiText}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Margin" Value="2,0" />
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="6"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="{StaticResource RukiHover}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="{StaticResource RukiPressed}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Icona piccola e discreta nell'angolo (ingranaggio e X): stesso stile per coerenza. -->
+        <Style x:Key="CornerIcon" TargetType="Button">
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground">
+                <Setter.Value>
+                    <SolidColorBrush Color="#202124" Opacity="0.45" />
+                </Setter.Value>
+            </Setter>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" Background="{TemplateBinding Background}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="{StaticResource RukiHover}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Border CornerRadius="12"
+            BorderBrush="{StaticResource RukiRainbow}"
+            BorderThickness="2"
+            Padding="6">
+        <Border.Background>
+            <SolidColorBrush Color="#FFFFFF" Opacity="0.96" />
+        </Border.Background>
+
+        <Grid>
+            <!-- Solo la riga dei pulsanti lascia libero l'angolo (ingranaggio + X); il resto usa tutta la larghezza. -->
+            <StackPanel Margin="0,2,0,0">
+                <StackPanel Orientation="Horizontal" Margin="0,0,38,0">
+
+                    <!-- Maniglia di trascinamento: il logo di Ruki. -->
+                    <Border x:Name="DragHandle"
+                            Cursor="SizeAll"
+                            Background="Transparent"
+                            Padding="2,0,4,0"
+                            MouseLeftButtonDown="DragHandle_MouseLeftButtonDown">
+                        <Image Source="/Assets/Logo.png" Width="20" Height="20" VerticalAlignment="Center" />
+                    </Border>
+
+                    <Button Style="{StaticResource OverlayButton}" Content="{loc:Loc Overlay_Chat}"
+                            Command="{Binding OpenChatCommand}" />
+
+                    <!-- Insegna: a riposo mostra "Insegna"; mentre registra diventa un quadrato di stop. -->
+                    <Button Command="{Binding ToggleTrainingCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource OverlayButton}">
+                                <Setter Property="ToolTip" Value="{loc:Loc Overlay_Teach}" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                        <Setter Property="ToolTip" Value="{loc:Loc Common_Stop}" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        <Grid>
+                            <TextBlock VerticalAlignment="Center">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Text" Value="{loc:Loc Overlay_Teach}" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsRecording}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <Rectangle Width="11" Height="11" RadiusX="2" RadiusY="2"
+                                       Fill="{StaticResource RukiDanger}"
+                                       Visibility="{Binding IsRecording, Converter={StaticResource BoolToVis}}" />
+                        </Grid>
+                    </Button>
+
+                    <!-- Indicatore di registrazione (subito dopo lo Stop, a sinistra): pallino + cronometro + muto microfono. -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,4,0"
+                                Visibility="{Binding IsRecording, Converter={StaticResource BoolToVis}}">
+                        <Ellipse Width="10" Height="10" Fill="#FF3B30" VerticalAlignment="Center" Margin="0,0,5,0" />
+                        <TextBlock Text="{Binding ElapsedText}" VerticalAlignment="Center" FontSize="13">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource RukiText}" />
+                                    <Style.Triggers>
+                                        <!-- Oltre la durata massima consigliata il cronometro diventa arancione. -->
+                                        <DataTrigger Binding="{Binding MaxReached}" Value="True">
+                                            <Setter Property="Foreground" Value="#E08600" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+
+                        <!-- Muto microfono: icona microfono; in muto compare una barra rossa diagonale. -->
+                        <Button Style="{StaticResource OverlayButton}" Command="{Binding ToggleMicCommand}"
+                                Padding="6,2" Margin="6,0,0,0" ToolTip="{loc:Loc Overlay_MicTip}">
+                            <Grid Width="18" Height="18">
+                                <TextBlock Text="&#xE720;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                           Foreground="{StaticResource RukiText}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <Path Stroke="#FF3B30" StrokeThickness="2" Data="M2,16 L16,2"
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      Visibility="{Binding IsMicMuted, Converter={StaticResource BoolToVis}}" />
+                            </Grid>
+                        </Button>
+
+                        <!-- Annulla insegnamento: bidone. Interrompe e CANCELLA la sessione (niente apprendimento). -->
+                        <Button Style="{StaticResource OverlayButton}" Command="{Binding CancelTrainingCommand}"
+                                Padding="6,2" Margin="2,0,0,0" ToolTip="{loc:Loc Overlay_DiscardTip}">
+                            <TextBlock Text="&#xE74D;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                       Foreground="{StaticResource RukiDanger}" />
+                        </Button>
+                    </StackPanel>
+
+                </StackPanel>
+
+                <!-- Stato dell'apprendimento dopo lo stop (compare solo se valorizzato). -->
+                <TextBlock Text="{Binding LearningStatus}" Foreground="{StaticResource RukiText}" FontSize="11"
+                           Margin="6,4,6,0" TextWrapping="Wrap" MaxWidth="320">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding LearningStatus}" Value="">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <!-- Esecuzione di un compito sul PC: lo stato resta visibile anche a fine esecuzione
+                     (così vedi l'esito); i pulsanti Pausa/Stop solo mentre è in corso. -->
+                <StackPanel Margin="6,4,6,2">
+                    <TextBlock Text="{Binding Action.StatusText}" Foreground="{StaticResource RukiText}" FontSize="11"
+                               TextWrapping="Wrap" MaxWidth="320">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Action.StatusText}" Value="">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0"
+                                Visibility="{Binding Action.IsRunning, Converter={StaticResource BoolToVis}}">
+                        <Button Command="{Binding TogglePauseActionCommand}">
+                            <Button.Style>
+                                <Style TargetType="Button" BasedOn="{StaticResource OverlayButton}">
+                                    <Setter Property="Content" Value="{loc:Loc Overlay_Pause}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Action.IsPaused}" Value="True">
+                                            <Setter Property="Content" Value="{loc:Loc Overlay_Resume}" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Button.Style>
+                        </Button>
+                        <!-- Stop azione: quadrato (come il classico tasto stop). -->
+                        <Button Style="{StaticResource OverlayButton}" Command="{Binding StopActionCommand}"
+                                ToolTip="{loc:Loc Common_Stop}">
+                            <Rectangle Width="11" Height="11" RadiusX="2" RadiusY="2" Fill="{StaticResource RukiDanger}" />
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Token I/O del mese + stima costo: piccolo e semitrasparente, nell'angolo in basso a destra. -->
+                <TextBlock Text="{Binding UsageText}" FontSize="9" HorizontalAlignment="Right" Margin="6,3,2,0">
+                    <TextBlock.Foreground>
+                        <SolidColorBrush Color="#202124" Opacity="0.4" />
+                    </TextBlock.Foreground>
+                </TextBlock>
+
+            </StackPanel>
+
+            <!-- Angolo in alto a destra: impostazioni (ingranaggio) e chiusura (X), piccole e coerenti. -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                <Button Style="{StaticResource CornerIcon}" Command="{Binding OpenSettingsCommand}"
+                        ToolTip="{loc:Loc Overlay_Settings}" Margin="0,0,2,0">
+                    <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="11" />
+                </Button>
+                <Button Style="{StaticResource CornerIcon}" Command="{Binding ExitCommand}"
+                        ToolTip="{loc:Loc Overlay_CloseTip}">
+                    <TextBlock Text="✕" FontSize="9" />
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

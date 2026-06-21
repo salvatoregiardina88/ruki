@@ -1,0 +1,49 @@
+<Window x:Class="Ruki.App.Views.ActionDebugWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="clr-namespace:Ruki.App.Localization"
+        Title="{loc:Loc Title_ActionDebug}"
+        Icon="/Assets/Logo.png"
+        Width="440" Height="700"
+        WindowStyle="ToolWindow"
+        Topmost="True"
+        ShowInTaskbar="False"
+        WindowStartupLocation="Manual">
+
+    <Grid Background="{StaticResource RukiBackground}">
+        <ScrollViewer x:Name="EntriesScroll" VerticalScrollBarVisibility="Auto" Padding="2">
+            <ItemsControl ItemsSource="{Binding Entries}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="6,4" Padding="8" CornerRadius="6"
+                                BorderBrush="{StaticResource RukiBorder}" BorderThickness="1">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <!-- Risposta del modello: pannello bianco; ciò che inviamo: azzurro chiaro. -->
+                                    <Setter Property="Background" Value="{StaticResource RukiSurface}" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSent}" Value="True">
+                                            <Setter Property="Background" Value="#E8F0FE" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Header}" FontWeight="Bold"
+                                           Foreground="#1A56DB" Margin="0,0,0,4" />
+
+                                <TextBlock Text="{Binding Text}" TextWrapping="Wrap" FontSize="11"
+                                           Foreground="{StaticResource RukiText}" FontFamily="Consolas" />
+
+                                <Image Source="{Binding Image}" Stretch="Uniform" MaxHeight="240"
+                                       HorizontalAlignment="Left" Margin="0,6,0,0"
+                                       Cursor="Hand" ToolTip="{loc:Loc ActionDebug_ZoomTip}"
+                                       MouseLeftButtonUp="OnImageClick" />
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</Window>

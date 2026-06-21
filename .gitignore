@@ -1,0 +1,28 @@
+# Artefatti di build .NET
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.user
+*.suo
+
+# Risultati di test / coverage
+[Tt]est[Rr]esults/
+coverage*.json
+coverage*.xml
+*.coverage
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+*.DotSettings.user
+
+# File di sistema
+Thumbs.db
+desktop.ini
+
+# Pubblicazione
+publish/
+*.zip
