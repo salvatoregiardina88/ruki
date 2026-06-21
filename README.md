@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/Logo.png" width="96" alt="Ruki logo" />
+  <img src="src/Ruki.App/Assets/Logo.png" width="96" alt="Ruki logo" />
   <h1>Ruki</h1>
   <p>A minimal Windows desktop AI assistant you can <b>teach</b> — and that then does the work for you, under your supervision.</p>
 </div>

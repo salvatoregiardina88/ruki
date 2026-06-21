@@ -26,3 +26,9 @@ desktop.ini
 # Pubblicazione
 publish/
 *.zip
+
+# Impostazioni locali di Claude Code
+.claude/
+
+# Documentazione interna di progetto
+docs/

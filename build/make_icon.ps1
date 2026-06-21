@@ -6,7 +6,7 @@
     Uso:  powershell -ExecutionPolicy Bypass -File build\make_icon.ps1
 #>
 param(
-    [string]$Source = "$PSScriptRoot\..\docs\Logo.png",
+    [string]$Source = "$PSScriptRoot\..\src\Ruki.App\Assets\Logo.png",
     [string]$Output = "$PSScriptRoot\..\src\Ruki.App\Assets\Logo.ico"
 )
 $ErrorActionPreference = 'Stop'
