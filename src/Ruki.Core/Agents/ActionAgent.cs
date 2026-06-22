@@ -65,7 +65,11 @@ public sealed class ActionAgent : IActionAgent
         app name): we will check the focus BEFORE sending the keys. If it isn't in the foreground, bring
         it there first.
 
-        Click only on elements you SEE; do not invent coordinates. If a page needs to load, use "wait".
+        Click only on elements you SEE; do not invent coordinates. Aim for the element's GEOMETRIC CENTER
+        on BOTH axes — halfway between its left and right edges (x) AND halfway between its top and bottom
+        edges (y). A common mistake is getting x right but clicking too high or too low: estimate the
+        element's full height and target its vertical middle, not its top edge or the text baseline. If a
+        page needs to load, use "wait".
 
         TEXT EDITING & CURSOR: a screenshot may NOT show the blinking text caret, so never assume where
         it is. When a "Text focus" note is provided (the focused field, the line the caret is on, and any
