@@ -12,6 +12,9 @@ public sealed class GlobalStopHotkey : IGlobalStopHotkey
     private const int WH_KEYBOARD_LL = 13;
     private const int WM_KEYDOWN = 0x0100;
     private const int VK_ESCAPE = 0x1B;
+    // Flag in KBDLLHOOKSTRUCT.flags: il tasto è stato INIETTATO (es. via SendInput) e non premuto fisicamente.
+    private const int LLKHF_INJECTED = 0x10;
+    private const int LLKHF_LOWER_IL_INJECTED = 0x02;
 
     private LowLevelKeyboardProc? _proc;   // tenuto vivo finché l'hook è installato
     private nint _hook;
@@ -42,9 +45,14 @@ public sealed class GlobalStopHotkey : IGlobalStopHotkey
     {
         if (nCode >= 0 && (int)wParam == WM_KEYDOWN)
         {
-            // Il primo campo di KBDLLHOOKSTRUCT è il virtual-key code.
+            // KBDLLHOOKSTRUCT: vkCode a offset 0, flags a offset 8.
             var vkCode = Marshal.ReadInt32(lParam);
-            if (vkCode == VK_ESCAPE)
+            var flags = Marshal.ReadInt32(lParam + 8);
+            var injected = (flags & (LLKHF_INJECTED | LLKHF_LOWER_IL_INJECTED)) != 0;
+
+            // Solo l'Esc FISICO dell'utente ferma l'esecuzione: gli Esc inviati dall'agente stesso
+            // (es. per chiudere una finestra) sono iniettati e NON devono auto-interrompere il compito.
+            if (vkCode == VK_ESCAPE && !injected)
                 _onStop?.Invoke();
         }
 
