@@ -121,7 +121,9 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <TextBox Grid.Column="0" Padding="8" VerticalContentAlignment="Center"
+                <!-- Cresce in altezza col testo (a capo automatico) fino a ~5 righe, poi scorre. -->
+                <TextBox Grid.Column="0" Padding="8" VerticalContentAlignment="Top"
+                         TextWrapping="Wrap" MaxHeight="118" VerticalScrollBarVisibility="Auto"
                          Text="{Binding Input, UpdateSourceTrigger=PropertyChanged}">
                     <TextBox.InputBindings>
                         <!-- Invio per inviare il messaggio. -->
@@ -130,7 +132,7 @@
                 </TextBox>
 
                 <Button Grid.Column="1" Content="{loc:Loc Chat_Send}" Margin="8,0,0,0" Padding="18,6"
-                        Command="{Binding SendCommand}" />
+                        VerticalAlignment="Bottom" Command="{Binding SendCommand}" />
             </Grid>
         </Grid>
     </Border>
