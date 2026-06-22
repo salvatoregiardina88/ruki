@@ -203,7 +203,10 @@ public sealed class ActionAgent : IActionAgent
             // Azione rischiosa: se la conferma è attiva, chiediamo all'utente prima di eseguire.
             if (settings.ConfirmRiskyActions && action.Risky)
             {
-                var approved = await _confirmation.ConfirmAsync(action.Describe(), token);
+                // Passiamo tipo/testo e le coordinate IN PIXEL del bersaglio (per evidenziarle con un cerchio).
+                var risky = new RiskyAction(action.Type, action.Text,
+                    ToPixelX(action.X, screenshot), ToPixelY(action.Y, screenshot));
+                var approved = await _confirmation.ConfirmAsync(risky, token);
                 if (!approved)
                 {
                     _logger.LogInformation("Azione rischiosa rifiutata dall'utente: {Action}", action.Describe());

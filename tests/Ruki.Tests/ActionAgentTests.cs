@@ -179,7 +179,7 @@ public class ActionAgentTests
     {
         public int Calls { get; private set; }
 
-        public Task<bool> ConfirmAsync(string actionDescription, CancellationToken cancellationToken = default)
+        public Task<bool> ConfirmAsync(RiskyAction action, CancellationToken cancellationToken = default)
         {
             Calls++;
             return Task.FromResult(approve);
