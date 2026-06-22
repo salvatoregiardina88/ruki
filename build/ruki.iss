@@ -16,7 +16,7 @@
 ; ---------------------------------------------------------------------------------------------
 
 #define AppName "Ruki"
-#define AppVersion "0.3.0"
+#define AppVersion "0.3.1"
 #define AppPublisher "Ruki"
 #define AppExeName "Ruki.App.exe"
 

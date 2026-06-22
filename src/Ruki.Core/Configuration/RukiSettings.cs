@@ -27,7 +27,7 @@ public sealed class RukiSettings
     /// Configurabile perché i nomi dei modelli cambiano nel tempo: va verificato
     /// il modello flagship disponibile sull'account Google.
     /// </summary>
-    public string GeminiModel { get; set; } = "gemini-3.1-pro-preview";
+    public string GeminiModel { get; set; } = "gemini-3.5-flash";
 
     /// <summary>
     /// Lingua dell'interfaccia: "it" o "en". Al primo avvio parte dalla lingua di sistema, così
@@ -138,7 +138,7 @@ public sealed class RukiSettings
             CostCurrencySymbol = "€";
 
         if (string.IsNullOrWhiteSpace(GeminiModel))
-            GeminiModel = "gemini-3.1-pro-preview";
+            GeminiModel = "gemini-3.5-flash";
 
         // Solo le due lingue supportate; qualsiasi altro valore torna alla lingua di sistema.
         UiLanguage = UiLanguage is "it" or "en" ? UiLanguage : DefaultUiLanguage();
