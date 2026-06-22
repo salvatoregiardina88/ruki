@@ -16,7 +16,7 @@ namespace Ruki.App.Services;
 public sealed partial class ActionSession : ObservableObject
 {
     private readonly IActionAgent _agent;
-    private readonly IGlobalStopHotkey _hotkey;
+    private readonly IGlobalActionHotkeys _hotkey;
     private readonly IClickIndicator _clickIndicator;
     private readonly ISettingsService _settings;
     private readonly IActionTrace _trace;
@@ -34,7 +34,7 @@ public sealed partial class ActionSession : ObservableObject
 
     public ActionSession(
         IActionAgent agent,
-        IGlobalStopHotkey hotkey,
+        IGlobalActionHotkeys hotkey,
         IClickIndicator clickIndicator,
         ISettingsService settings,
         IActionTrace trace,
@@ -68,7 +68,7 @@ public sealed partial class ActionSession : ObservableObject
             _trace.Clear();
         }
 
-        _hotkey.Start(Stop);          // Esc ferma l'esecuzione (installato sul thread UI)
+        _hotkey.Start(Stop, TogglePause);   // Esc ferma, Barra spaziatrice mette in pausa (sul thread UI)
         _clickIndicator.Start();      // anello che segue il cursore per tutta l'esecuzione
         IsRunning = true;
         IsPaused = false;

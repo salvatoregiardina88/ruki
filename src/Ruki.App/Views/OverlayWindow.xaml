@@ -214,6 +214,9 @@
                                 ToolTip="{loc:Loc Common_Stop}">
                             <Rectangle Width="11" Height="11" RadiusX="2" RadiusY="2" Fill="{StaticResource RukiDanger}" />
                         </Button>
+                        <!-- Promemoria scorciatoie da tastiera (Esc/Spazio). -->
+                        <TextBlock Text="{loc:Loc Overlay_ActionHotkeys}" VerticalAlignment="Center"
+                                   Margin="8,0,2,0" FontSize="10" Foreground="{StaticResource RukiSubtleText}" />
                     </StackPanel>
                 </StackPanel>
 

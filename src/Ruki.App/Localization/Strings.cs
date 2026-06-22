@@ -38,6 +38,8 @@ internal static class Strings
         ["Overlay_DiscardTip"] = ("Annulla insegnamento (elimina la registrazione)", "Discard teaching (delete the recording)"),
         ["Overlay_Pause"] = ("Pausa", "Pause"),
         ["Overlay_Resume"] = ("Riprendi", "Resume"),
+        // Promemoria scorciatoie mostrato nell'overlay durante l'esecuzione di un compito.
+        ["Overlay_ActionHotkeys"] = ("Esc = ferma · Spazio = pausa", "Esc = stop · Space = pause"),
 
         // --- Apprendimento (stato mostrato nell'overlay dopo lo stop) ---
         ["Learn_Reorganizing"] = ("Sto riorganizzando le idee prima di apprendere…",
@@ -57,8 +59,7 @@ internal static class Strings
         ["Chat_UnexpectedError"] = ("Errore imprevisto: {0}", "Unexpected error: {0}"),
 
         // --- Esecuzione compito (Action Agent) ---
-        ["Action_Running"] = ("Sto eseguendo: {0}  (premi Esc per fermare)",
-                              "Running: {0}  (press Esc to stop)"),
+        ["Action_Running"] = ("Sto eseguendo: {0}", "Running: {0}"),
         ["Action_Resumed"] = ("Ripreso.", "Resumed."),
         ["Action_Paused"] = ("In pausa.", "Paused."),
         ["Action_Done"] = ("Fatto: {0}", "Done: {0}"),

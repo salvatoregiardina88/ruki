@@ -63,10 +63,10 @@ public static class InfrastructureServiceCollectionExtensions
         // Avvio automatico con Windows (chiave di registro per-utente).
         services.AddSingleton<IStartupManager, RegistryStartupManager>();
 
-        // Esecuzione dei task sul PC (Action Agent): automazione input e stop globale da tastiera.
+        // Esecuzione dei task sul PC (Action Agent): automazione input e scorciatoie globali (stop/pausa).
         services.AddSingleton<IInputAutomationService, Win32InputAutomationService>();
         services.AddSingleton<IForegroundWindowService, Win32ForegroundWindowService>();
-        services.AddSingleton<IGlobalStopHotkey, GlobalStopHotkey>();
+        services.AddSingleton<IGlobalActionHotkeys, GlobalActionHotkeys>();
 
         return services;
     }
