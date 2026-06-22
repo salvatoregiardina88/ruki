@@ -5,10 +5,11 @@ namespace Ruki.Infrastructure.Automation;
 
 /// <summary>
 /// Implementazione di <see cref="IGlobalActionHotkeys"/> con un hook globale di tastiera
-/// (<c>WH_KEYBOARD_LL</c>) che intercetta <c>Esc</c> (ferma) e <c>Barra spaziatrice</c> (pausa/riprendi)
-/// indipendentemente dalla finestra attiva. Vengono considerati solo i tasti FISICI: quelli iniettati
-/// dall'agente stesso (flag <c>LLKHF_INJECTED</c>) sono ignorati, così l'agente non si auto-interrompe
-/// né si mette in pausa quando digita degli spazi. I due tasti di controllo vengono "consumati" (non
+/// (<c>WH_KEYBOARD_LL</c>) che intercetta <c>Esc</c> (ferma) e <c>Barra spaziatrice</c> (pausa)
+/// indipendentemente dalla finestra attiva. Agiscono solo se il compito è in corso e NON in pausa.
+/// Vengono considerati solo i tasti FISICI: quelli iniettati dall'agente stesso (flag
+/// <c>LLKHF_INJECTED</c>) sono ignorati, così l'agente non si auto-interrompe né si mette in pausa
+/// quando digita degli spazi. I due tasti di controllo, quando agiscono, vengono "consumati" (non
 /// inoltrati all'app sottostante), per non lasciare input spuri nella finestra che l'agente sta usando.
 /// </summary>
 public sealed class GlobalActionHotkeys : IGlobalActionHotkeys
@@ -24,15 +25,17 @@ public sealed class GlobalActionHotkeys : IGlobalActionHotkeys
     private LowLevelKeyboardProc? _proc;   // tenuto vivo finché l'hook è installato
     private nint _hook;
     private Action? _onStop;
-    private Action? _onTogglePause;
+    private Action? _onPause;
+    private Func<bool>? _isPaused;
 
-    public void Start(Action onStop, Action onTogglePause)
+    public void Start(Action onStop, Action onPause, Func<bool> isPaused)
     {
         if (_hook != 0)
             return;
 
         _onStop = onStop;
-        _onTogglePause = onTogglePause;
+        _onPause = onPause;
+        _isPaused = isPaused;
         _proc = Callback;
         _hook = SetWindowsHookEx(WH_KEYBOARD_LL, _proc, GetModuleHandle(null), 0);
     }
@@ -46,7 +49,8 @@ public sealed class GlobalActionHotkeys : IGlobalActionHotkeys
         }
         _proc = null;
         _onStop = null;
-        _onTogglePause = null;
+        _onPause = null;
+        _isPaused = null;
     }
 
     private nint Callback(int nCode, nint wParam, nint lParam)
@@ -58,13 +62,14 @@ public sealed class GlobalActionHotkeys : IGlobalActionHotkeys
             var flags = Marshal.ReadInt32(lParam + 8);
             var injected = (flags & (LLKHF_INJECTED | LLKHF_LOWER_IL_INJECTED)) != 0;
 
-            // Solo i tasti FISICI dell'utente controllano l'esecuzione; quelli iniettati dall'agente no.
-            if (!injected && (vkCode == VK_ESCAPE || vkCode == VK_SPACE))
+            // Solo i tasti FISICI dell'utente, e solo mentre il compito è in corso e NON in pausa:
+            // in pausa la tastiera torna all'utente (i tasti passano all'app, ripresa solo manuale).
+            if (!injected && _isPaused?.Invoke() != true && (vkCode == VK_ESCAPE || vkCode == VK_SPACE))
             {
                 if (vkCode == VK_ESCAPE)
                     _onStop?.Invoke();
                 else
-                    _onTogglePause?.Invoke();
+                    _onPause?.Invoke();
 
                 return 1;   // consuma il tasto: non lo inoltra alla finestra che l'agente sta usando
             }

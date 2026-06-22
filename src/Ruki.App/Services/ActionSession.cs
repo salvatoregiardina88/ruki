@@ -68,7 +68,7 @@ public sealed partial class ActionSession : ObservableObject
             _trace.Clear();
         }
 
-        _hotkey.Start(Stop, TogglePause);   // Esc ferma, Barra spaziatrice mette in pausa (sul thread UI)
+        _hotkey.Start(Stop, Pause, () => IsPaused);   // Esc ferma, Barra spaziatrice mette in pausa (sul thread UI)
         _clickIndicator.Start();      // anello che segue il cursore per tutta l'esecuzione
         IsRunning = true;
         IsPaused = false;
@@ -95,6 +95,17 @@ public sealed partial class ActionSession : ObservableObject
             IsPaused = true;
             StatusText = Loc.T("Action_Paused");
         }
+    }
+
+    /// <summary>Mette in pausa (solo pausa, niente ripresa): usata dall'hotkey Barra spaziatrice.</summary>
+    public void Pause()
+    {
+        if (_controller is null || _controller.IsPaused)
+            return;
+
+        _controller.Pause();
+        IsPaused = true;
+        StatusText = Loc.T("Action_Paused");
     }
 
     public void Stop() => _controller?.Stop();
