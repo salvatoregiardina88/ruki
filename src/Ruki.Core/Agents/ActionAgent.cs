@@ -44,6 +44,10 @@ public sealed class ActionAgent : IActionAgent
         - "read_memory": read the full content of one or more memories; requires "nodeIds" (list of ids).
         Expand/read only what you truly need for the task.
 
+        PREFERRED SOFTWARE: when a task could be done with different applications, PREFER the software the
+        user prefers or has indicated (check Ruki's memory / the user profile) and use it where possible,
+        instead of an arbitrary alternative.
+
         The x and y coordinates are NORMALIZED from 0 to 1000 (x = horizontal position relative to the
         image width, y = vertical relative to the height), origin at the top-left. Example: screen
         center x=500 y=500; top-left corner x=0 y=0. ALWAYS give x and y in the 0–1000 range.

@@ -74,7 +74,9 @@ public sealed class TrainingAgent : ITrainingAgent
 
         USER PROFILE (rare, optional): if the session reveals DURABLE information about the USER that
         rarely changes — their role/profession, the systems/tools they regularly use, stable
-        preferences, long-term context — set "userProfileNote" to a short statement of it. Leave it null
+        preferences, long-term context — set "userProfileNote" to a short statement of it. In particular,
+        if the user expresses or shows a PREFERENCE for specific software/apps for a given purpose (e.g.
+        "I always use X for this", "open it in Y, not Z"), record that preferred software. Leave it null
         for anything ephemeral or specific to this single task. Most sessions leave it null.
 
         IMPORTANT: write "title", "summary" and "content" in the SAME language the user uses in the
