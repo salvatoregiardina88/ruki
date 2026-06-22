@@ -32,9 +32,6 @@ public sealed partial class ChatViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(SendCommand))]
     private bool _isBusy;
 
-    // Aggiorniamo il profilo utente una sola volta per finestra di chat (dopo la presentazione).
-    private bool _profileUpdateScheduled;
-
     public ChatViewModel(
         IOrchestratorAgent orchestrator,
         ITrainingSessionRecorder recorder,
@@ -93,12 +90,9 @@ public sealed partial class ChatViewModel : ObservableObject
                 _action.Start(reply.ActionGoal);
             }
 
-            // Dopo la presentazione dell'utente, salviamo il profilo in memoria (in background).
-            if (!_profileUpdateScheduled)
-            {
-                _profileUpdateScheduled = true;
-                _ = UpdateProfileInBackgroundAsync();
-            }
+            // Aggiorna il profilo in memoria, in background. L'orchestratore decide SE rifarlo davvero
+            // (solo dopo abbastanza nuovi messaggi) e lo UNISCE al profilo esistente, senza sovrascriverlo.
+            _ = UpdateProfileInBackgroundAsync();
         }
         catch (LlmException ex)
         {

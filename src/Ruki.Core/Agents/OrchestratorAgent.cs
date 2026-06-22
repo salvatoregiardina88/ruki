@@ -50,16 +50,31 @@ public sealed class OrchestratorAgent : IOrchestratorAgent
         No text outside the JSON.
         """;
 
-    // Istruzione usata per distillare un profilo dell'utente dalla conversazione.
-    private const string ProfileExtractionPrompt =
+    // Istruzione per AGGIORNARE (non sovrascrivere) il profilo: parte da quello esistente e lo
+    // arricchisce/corregge con la conversazione recente, senza perdere ciò che è ancora valido.
+    private const string ProfileUpdatePrompt =
         """
-        Analyze the conversation and produce a concise profile of the user, for internal use: who they
-        are, what they do, their job, the tools/software they use, the context, and how Ruki can help
-        them. Write in the user's language, as short bullet points. Report only what emerges from the
-        conversation: do not invent anything. If information is scarce, write only the little that is known.
+        You maintain a concise profile of the user for Ruki's internal memory: who they are, their
+        job/role, the tools and software they use, their working context, and how Ruki can help them.
+
+        You are given the CURRENT profile (it may be empty) and the RECENT conversation. Output the
+        UPDATED profile, following these rules:
+        - PRESERVE everything in the current profile that is still valid — never drop a fact just because
+          it is not mentioned in the recent conversation.
+        - ADD what newly emerges from the conversation, and CORRECT anything it shows is wrong or outdated.
+        - Do not invent anything. Be concise: short bullet points, in the user's language.
+        Output ONLY the updated profile text, with no preamble.
         """;
 
+    /// <summary>Quanti nuovi turni utente devono accumularsi dall'ultimo aggiornamento prima di rifare il profilo.</summary>
+    private const int ProfileUpdateEveryNUserTurns = 4;
+
     private readonly List<ChatMessage> _history = [];
+
+    // Stato per aggiornare il profilo con parsimonia (anti-riscrittura continua) e senza run concorrenti.
+    private int _userTurnsAtLastProfileUpdate;
+    private bool _profileUpdateRunning;
+
     private readonly ILlmProvider _llm;
     private readonly IMemoryStore _memory;
     private readonly ISecretStore _secrets;
@@ -188,28 +203,55 @@ public sealed class OrchestratorAgent : IOrchestratorAgent
 
     public async Task UpdateUserProfileAsync(CancellationToken cancellationToken = default)
     {
-        // Senza messaggi dell'utente non c'è nulla da cui estrarre un profilo.
-        if (!_history.Any(m => m.Role == ChatRole.User))
+        if (_profileUpdateRunning)
             return;
 
-        // Passiamo la conversazione come UN solo messaggio utente (trascrizione): così la richiesta
-        // termina con un turno utente, come si aspetta Gemini per generare la risposta.
-        var transcript = string.Join("\n", _history.Select(m =>
-            $"{(m.Role == ChatRole.User ? "User" : "Ruki")}: {m.Text}"));
+        // Senza messaggi dell'utente non c'è nulla da cui ricavare un profilo.
+        var userTurns = _history.Count(m => m.Role == ChatRole.User);
+        if (userTurns == 0)
+            return;
 
-        var request = new LlmRequest
+        var existing = GetProfileNode();
+        var hasProfile = !string.IsNullOrWhiteSpace(existing?.Content);
+
+        // Con parsimonia: il profilo si crea presto la PRIMA volta, poi si rinfresca solo dopo
+        // abbastanza nuovi messaggi dall'ultimo aggiornamento (niente riscritture a ogni apertura).
+        if (hasProfile && userTurns - _userTurnsAtLastProfileUpdate < ProfileUpdateEveryNUserTurns)
+            return;
+
+        _profileUpdateRunning = true;
+        try
         {
-            SystemInstruction = ProfileExtractionPrompt,
-            Messages = [new ChatMessage(ChatRole.User, "Here is the conversation so far:\n\n" + transcript)],
-            Temperature = 0.2,   // estrazione fattuale: meno creatività
-        };
+            // Trascrizione come UN solo messaggio utente: così la richiesta termina con un turno utente.
+            var transcript = string.Join("\n", _history.Select(m =>
+                $"{(m.Role == ChatRole.User ? "User" : "Ruki")}: {m.Text}"));
 
-        var profile = (await _llm.CompleteAsync(request, cancellationToken)).Text;
-        if (string.IsNullOrWhiteSpace(profile))
-            return;
+            var request = new LlmRequest
+            {
+                SystemInstruction = ProfileUpdatePrompt,
+                // Passiamo il profilo ATTUALE + la conversazione: il modello lo UNISCE, non lo sovrascrive.
+                Messages =
+                [
+                    new ChatMessage(ChatRole.User,
+                        "CURRENT profile (may be empty):\n"
+                        + (hasProfile ? existing!.Content : "(none)")
+                        + "\n\nRECENT conversation:\n" + transcript),
+                ],
+                Temperature = 0.2,   // aggiornamento fattuale: meno creatività
+            };
 
-        UpsertProfile(profile.Trim());
-        _logger.LogInformation("Profilo utente aggiornato in memoria.");
+            var profile = (await _llm.CompleteAsync(request, cancellationToken)).Text;
+            if (string.IsNullOrWhiteSpace(profile))
+                return;
+
+            UpsertProfile(profile.Trim());
+            _userTurnsAtLastProfileUpdate = userTurns;
+            _logger.LogInformation("Profilo utente aggiornato in memoria (merge, {Turns} turni utente).", userTurns);
+        }
+        finally
+        {
+            _profileUpdateRunning = false;
+        }
     }
 
     public void NoteActionOutcome(string outcome)
@@ -225,6 +267,7 @@ public sealed class OrchestratorAgent : IOrchestratorAgent
     public void Reset()
     {
         _history.Clear();
+        _userTurnsAtLastProfileUpdate = 0;
         _logger.LogInformation("Conversazione dell'orchestratore azzerata.");
     }
 

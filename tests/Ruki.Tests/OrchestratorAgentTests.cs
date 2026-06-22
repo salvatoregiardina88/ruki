@@ -135,6 +135,40 @@ public class OrchestratorAgentTests
     }
 
     [Fact]
+    public async Task UpdateUserProfileAsync_PassesExistingProfileToModel_ForMerge()
+    {
+        var memory = new FakeMemoryStore();
+        memory.Add(new MemoryNode { Title = "Profilo utente", Type = MemoryNodeType.Memory, Content = "- Sviluppatore C#" });
+        var provider = new FakeLlmProvider { Reply = "- Sviluppatore C#\n- Usa Visual Studio" };
+        var agent = CreateAgent(provider, memory);
+
+        // Abbastanza turni per superare la soglia di parsimonia (il profilo esiste già).
+        await agent.SendAsync("uso visual studio");
+        await agent.SendAsync("e git");
+        await agent.SendAsync("al lavoro");
+        await agent.SendAsync("ogni giorno");
+        await agent.UpdateUserProfileAsync();
+
+        // Il profilo ESISTENTE viene passato al modello: si aggiorna unendo, non sovrascrivendo alla cieca.
+        Assert.Contains("Sviluppatore C#", provider.LastRequest!.Messages[0].Text);
+    }
+
+    [Fact]
+    public async Task UpdateUserProfileAsync_SkipsWhenProfileExistsAndFewNewTurns()
+    {
+        var memory = new FakeMemoryStore();
+        memory.Add(new MemoryNode { Title = "Profilo utente", Type = MemoryNodeType.Memory, Content = "- Sviluppatore" });
+        var provider = new FakeLlmProvider { Reply = "x" };
+        var agent = CreateAgent(provider, memory);
+
+        await agent.SendAsync("ciao");   // un solo turno utente: sotto la soglia
+        provider.LastRequest = null;     // così verifichiamo che NON parta una chiamata di aggiornamento
+        await agent.UpdateUserProfileAsync();
+
+        Assert.Null(provider.LastRequest);   // profilo già presente + pochi turni → nessun aggiornamento
+    }
+
+    [Fact]
     public void WelcomeMessage_DiffersWhenProfileExists()
     {
         var original = CultureInfo.CurrentUICulture;
