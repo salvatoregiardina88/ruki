@@ -46,6 +46,9 @@ public sealed partial class ChatViewModel : ObservableObject
         _action = action;
         _logger = logger;
 
+        // L'esito di un'azione eseguita sul PC va mostrato come risposta in chat (non solo in overlay).
+        _action.OutcomeReported += OnActionOutcome;
+
         // Ricostruisce la conversazione visibile: benvenuto + eventuali turni già avvenuti
         // (utile se la finestra viene riaperta nella stessa sessione).
         Messages.Add(ChatBubble.Assistant(_orchestrator.WelcomeMessage));
@@ -56,6 +59,13 @@ public sealed partial class ChatViewModel : ObservableObject
                 : ChatBubble.Assistant(message.Text));
         }
     }
+
+    /// <summary>Esito di un'azione: lo aggiungiamo come messaggio dell'assistente (già sul thread UI).</summary>
+    private void OnActionOutcome(object? sender, string message)
+        => Messages.Add(ChatBubble.Assistant(message));
+
+    /// <summary>Da chiamare alla chiusura della finestra per non lasciare l'iscrizione appesa.</summary>
+    public void Detach() => _action.OutcomeReported -= OnActionOutcome;
 
     private bool CanSend() => !IsBusy && !string.IsNullOrWhiteSpace(Input);
 

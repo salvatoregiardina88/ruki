@@ -18,6 +18,9 @@ public partial class ChatWindow : Window
 
         // Auto-scroll: quando la collezione cambia, portiamo la vista in fondo.
         viewModel.Messages.CollectionChanged += (_, _) => MessagesScroll.ScrollToEnd();
+
+        // Alla chiusura, stacca le iscrizioni del ViewModel (es. all'esito delle azioni).
+        Closed += (_, _) => viewModel.Detach();
     }
 
     /// <summary>Trascina la finestra afferrando l'intestazione.</summary>

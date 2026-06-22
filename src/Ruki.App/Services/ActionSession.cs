@@ -29,6 +29,9 @@ public sealed partial class ActionSession : ObservableObject
     [ObservableProperty] private bool _isPaused;
     [ObservableProperty] private string _statusText = string.Empty;
 
+    /// <summary>Sollevato (sul thread UI) con l'esito finale del compito, così la chat può mostrarlo.</summary>
+    public event EventHandler<string>? OutcomeReported;
+
     public ActionSession(
         IActionAgent agent,
         IGlobalStopHotkey hotkey,
@@ -101,16 +104,16 @@ public sealed partial class ActionSession : ObservableObject
         try
         {
             var result = await _agent.RunAsync(goal, controller);
-            SetStatusOnUi(DescribeResult(result));
+            ReportOutcomeOnUi(DescribeResult(result));
         }
         catch (OperationCanceledException)
         {
-            SetStatusOnUi(Loc.T("Action_Interrupted"));
+            ReportOutcomeOnUi(Loc.T("Action_Interrupted"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Esecuzione del compito fallita.");
-            SetStatusOnUi(Loc.T("Action_Error", ex.Message));
+            ReportOutcomeOnUi(Loc.T("Action_Error", ex.Message));
         }
         finally
         {
@@ -142,7 +145,12 @@ public sealed partial class ActionSession : ObservableObject
             : Loc.T("Action_NotDone", result.Detail),
     };
 
-    private void SetStatusOnUi(string text) => OnUi(() => StatusText = text);
+    /// <summary>Imposta lo status nell'overlay E notifica l'esito (per mostrarlo in chat). Sul thread UI.</summary>
+    private void ReportOutcomeOnUi(string text) => OnUi(() =>
+    {
+        StatusText = text;
+        OutcomeReported?.Invoke(this, text);
+    });
 
     private static void OnUi(Action action)
     {
