@@ -28,4 +28,15 @@ public partial class ChatWindow : Window
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    /// <summary>Invio = invia il messaggio; Shift+Invio = a capo (comportamento di default del TextBox).</summary>
+    private void OnInputPreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) == 0)
+        {
+            if (DataContext is ChatViewModel viewModel && viewModel.SendCommand.CanExecute(null))
+                viewModel.SendCommand.Execute(null);
+            e.Handled = true;   // evita che l'Invio inserisca un a capo
+        }
+    }
 }

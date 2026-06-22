@@ -121,15 +121,12 @@
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Cresce in altezza col testo (a capo automatico) fino a ~5 righe, poi scorre. -->
+                <!-- Cresce in altezza col testo (a capo automatico + Shift+Invio) fino a ~5 righe, poi scorre.
+                     Invio = invia, Shift+Invio = a capo (gestito in OnInputPreviewKeyDown). -->
                 <TextBox Grid.Column="0" Padding="8" VerticalContentAlignment="Top"
-                         TextWrapping="Wrap" MaxHeight="118" VerticalScrollBarVisibility="Auto"
-                         Text="{Binding Input, UpdateSourceTrigger=PropertyChanged}">
-                    <TextBox.InputBindings>
-                        <!-- Invio per inviare il messaggio. -->
-                        <KeyBinding Key="Return" Command="{Binding SendCommand}" />
-                    </TextBox.InputBindings>
-                </TextBox>
+                         TextWrapping="Wrap" AcceptsReturn="True" MaxHeight="118" VerticalScrollBarVisibility="Auto"
+                         PreviewKeyDown="OnInputPreviewKeyDown"
+                         Text="{Binding Input, UpdateSourceTrigger=PropertyChanged}" />
 
                 <Button Grid.Column="1" Content="{loc:Loc Chat_Send}" Margin="8,0,0,0" Padding="18,6"
                         VerticalAlignment="Bottom" Command="{Binding SendCommand}" />

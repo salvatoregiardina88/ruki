@@ -54,8 +54,10 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; Flags: unchecked
 Name: "startup"; Description: "{cm:AutoStart}"; Flags: unchecked
 
 [Files]
-; L'unico file da distribuire: l'eseguibile self-contained (include .NET e tutte le dipendenze).
+; L'eseguibile self-contained (include .NET e tutte le dipendenze).
 Source: "..\publish\app\{#AppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+; Avvisi di licenza delle dipendenze di terze parti (incluse nell'eseguibile).
+Source: "..\THIRD-PARTY-NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
