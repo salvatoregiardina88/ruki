@@ -30,6 +30,14 @@ public interface IOrchestratorAgent
     /// </summary>
     Task UpdateUserProfileAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Registra in cronologia l'esito di un'azione eseguita sul PC, come se l'assistente avesse
+    /// riferito il risultato. Serve a mantenere la conversazione coerente: i messaggi successivi
+    /// dell'utente possono fare riferimento a ciò che l'azione ha prodotto. Va chiamato anche se la
+    /// finestra di chat è chiusa (la cronologia vive nell'orchestratore, non nella UI).
+    /// </summary>
+    void NoteActionOutcome(string outcome);
+
     /// <summary>Azzera la conversazione corrente.</summary>
     void Reset();
 }

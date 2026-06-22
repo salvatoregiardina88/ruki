@@ -104,16 +104,16 @@ public sealed partial class ActionSession : ObservableObject
         try
         {
             var result = await _agent.RunAsync(goal, controller);
-            ReportOutcomeOnUi(DescribeResult(result));
+            ReportOutcomeOnUi(DescribeBrief(result), DescribeResult(result));
         }
         catch (OperationCanceledException)
         {
-            ReportOutcomeOnUi(Loc.T("Action_Interrupted"));
+            ReportOutcomeOnUi(Loc.T("Action_InterruptedShort"), Loc.T("Action_Interrupted"));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Esecuzione del compito fallita.");
-            ReportOutcomeOnUi(Loc.T("Action_Error", ex.Message));
+            ReportOutcomeOnUi(Loc.T("Action_ErrorShort"), Loc.T("Action_Error", ex.Message));
         }
         finally
         {
@@ -145,11 +145,18 @@ public sealed partial class ActionSession : ObservableObject
             : Loc.T("Action_NotDone", result.Detail),
     };
 
-    /// <summary>Imposta lo status nell'overlay E notifica l'esito (per mostrarlo in chat). Sul thread UI.</summary>
-    private void ReportOutcomeOnUi(string text) => OnUi(() =>
+    /// <summary>Esito in forma BREVE per l'overlay (una riga): solo "Fatto" / "Non riuscito".</summary>
+    private static string DescribeBrief(ActionResult result)
+        => result.Outcome == ActionOutcome.Completed ? Loc.T("Action_DoneShort") : Loc.T("Action_FailedShort");
+
+    /// <summary>
+    /// Imposta lo status nell'overlay (testo BREVE) e notifica l'esito COMPLETO (per la chat e la
+    /// cronologia dell'orchestratore). Sul thread UI.
+    /// </summary>
+    private void ReportOutcomeOnUi(string brief, string full) => OnUi(() =>
     {
-        StatusText = text;
-        OutcomeReported?.Invoke(this, text);
+        StatusText = brief;
+        OutcomeReported?.Invoke(this, full);
     });
 
     private static void OnUi(Action action)

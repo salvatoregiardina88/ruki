@@ -68,6 +68,11 @@ internal static class Strings
         ["Action_MaxSteps"] = ("Fermato: raggiunto il limite di {0} passi.", "Stopped: reached the limit of {0} steps."),
         ["Action_Interrupted"] = ("Esecuzione interrotta.", "Execution interrupted."),
         ["Action_Error"] = ("Errore: {0}", "Error: {0}"),
+        // Versioni brevi per l'overlay (una sola riga di stato): il dettaglio completo va in chat.
+        ["Action_DoneShort"] = ("Fatto", "Done"),
+        ["Action_FailedShort"] = ("Non riuscito", "Failed"),
+        ["Action_InterruptedShort"] = ("Interrotto", "Interrupted"),
+        ["Action_ErrorShort"] = ("Errore", "Error"),
         ["Update_Title"] = ("Aggiornamento disponibile", "Update available"),
         ["Update_Body"] = ("È disponibile la versione {0} di Ruki. Vuoi aprire la pagina per scaricarla?",
                            "Ruki version {0} is available. Open the download page?"),

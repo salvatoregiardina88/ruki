@@ -67,6 +67,13 @@ public sealed class ActionAgent : IActionAgent
 
         Click only on elements you SEE; do not invent coordinates. If a page needs to load, use "wait".
 
+        TEXT EDITING & CURSOR: a screenshot may NOT show the blinking text caret, so never assume where
+        it is. When a "Text focus" note is provided (the focused field, the line the caret is on, and any
+        selection), rely on it to know exactly where typing and Delete/Backspace will act. To edit or
+        delete a SPECIFIC piece of text, first place the caret deterministically — click precisely on it,
+        or SELECT the target (e.g. Home then Shift+End for a line, Shift+Down, or Ctrl+A) — and only then
+        delete or type. Do NOT press Delete/Backspace hoping the caret is already on the right line.
+
         If an action is potentially DESTRUCTIVE or IRREVERSIBLE (delete, send/submit, pay, overwrite a
         file, close without saving, etc.), set "risky": true so the user can confirm it before it runs.
 
@@ -82,6 +89,7 @@ public sealed class ActionAgent : IActionAgent
     private readonly IScreenCaptureService _screen;
     private readonly IInputAutomationService _input;
     private readonly IForegroundWindowService _foreground;
+    private readonly ICaretContextProvider _caret;
     private readonly IClickIndicator _clickIndicator;
     private readonly IMemoryStore _memory;
     private readonly ISettingsService _settings;
@@ -94,6 +102,7 @@ public sealed class ActionAgent : IActionAgent
         IScreenCaptureService screen,
         IInputAutomationService input,
         IForegroundWindowService foreground,
+        ICaretContextProvider caret,
         IClickIndicator clickIndicator,
         IMemoryStore memory,
         ISettingsService settings,
@@ -105,6 +114,7 @@ public sealed class ActionAgent : IActionAgent
         _screen = screen;
         _input = input;
         _foreground = foreground;
+        _caret = caret;
         _clickIndicator = clickIndicator;
         _memory = memory;
         _settings = settings;
@@ -130,6 +140,7 @@ public sealed class ActionAgent : IActionAgent
                 + "Ruki's memory (titles only; use expand_node/read_memory for details):\n"
                 + RenderSkeleton(settings.MemoryTreeDepth)
                 + "\n\n" + DescribeWindowContext()
+                + DescribeCaret()
                 + "\n\nHere is the latest screenshot of the screen; what is the next action?"),
         };
 
@@ -196,7 +207,7 @@ public sealed class ActionAgent : IActionAgent
             // Lo schermo è cambiato: cattura il nuovo stato (e la finestra attiva) per il prossimo passo.
             screenshot = _screen.Capture();
             conversation.Add(new ChatMessage(ChatRole.User,
-                $"Result: {note}.\n{DescribeForeground()}\nHere is the updated screen; what is the next action?"));
+                $"Result: {note}.\n{DescribeForeground()}{DescribeCaret()}\nHere is the updated screen; what is the next action?"));
         }
 
         return new ActionResult(ActionOutcome.LimitReached, null, maxSteps);
@@ -378,6 +389,17 @@ public sealed class ActionAgent : IActionAgent
 
     /// <summary>Solo la finestra attiva corrente (inviata a ogni passo).</summary>
     private string DescribeForeground() => $"Active window: {DescribeWindow(_foreground.GetForeground())}.";
+
+    /// <summary>
+    /// Evidenza (best-effort) di dove si trova il caret di testo: campo a fuoco, riga corrente,
+    /// selezione. Inviata insieme allo screenshot perché il caret spesso non è visibile nell'immagine.
+    /// Riga a sé; stringa vuota se non disponibile (l'app non espone il testo via accessibilità).
+    /// </summary>
+    private string DescribeCaret()
+    {
+        var caret = _caret.Describe();
+        return string.IsNullOrWhiteSpace(caret) ? string.Empty : "\n" + caret;
+    }
 
     /// <summary>Elenco delle finestre aperte (inviato solo all'inizio o su richiesta con list_windows).</summary>
     private string DescribeOpenWindows()

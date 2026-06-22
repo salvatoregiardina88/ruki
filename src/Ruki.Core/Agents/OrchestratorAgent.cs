@@ -212,6 +212,16 @@ public sealed class OrchestratorAgent : IOrchestratorAgent
         _logger.LogInformation("Profilo utente aggiornato in memoria.");
     }
 
+    public void NoteActionOutcome(string outcome)
+    {
+        if (string.IsNullOrWhiteSpace(outcome))
+            return;
+
+        // Lo registriamo come turno dell'assistente: per il modello è il "report" del risultato.
+        // Eventuali turni assistente consecutivi vengono fusi a valle, nel payload per Gemini.
+        _history.Add(new ChatMessage(ChatRole.Assistant, outcome.Trim()));
+    }
+
     public void Reset()
     {
         _history.Clear();

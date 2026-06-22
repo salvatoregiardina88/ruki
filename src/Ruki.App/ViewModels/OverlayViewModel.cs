@@ -43,9 +43,13 @@ public sealed partial class OverlayViewModel : ObservableObject
     [ObservableProperty]
     private bool _isMicMuted;
 
-    /// <summary>Messaggio sull'apprendimento dopo lo stop (es. "Sto imparando…", "Imparato: …").</summary>
+    /// <summary>
+    /// UNICA riga di stato dell'overlay: ci scrivono sia l'apprendimento (es. "Sto imparando…",
+    /// "Imparato: …") sia l'esito breve delle azioni ("Fatto"/"Non riuscito"). L'ultimo messaggio
+    /// rimpiazza il precedente, così non restano mai due messaggi sovrapposti.
+    /// </summary>
     [ObservableProperty]
-    private string _learningStatus = string.Empty;
+    private string _statusMessage = string.Empty;
 
     /// <summary>Riga piccola in basso: token I/O del mese e stima costo (es. "Token I/O: 500k/392k ~ 3€").</summary>
     [ObservableProperty]
@@ -72,6 +76,14 @@ public sealed partial class OverlayViewModel : ObservableObject
 
         _uiTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
         _uiTimer.Tick += (_, _) => ElapsedText = Format(_recorder.Elapsed);
+
+        // Lo stato (breve) delle azioni confluisce nell'unica riga di stato dell'overlay: l'ultimo
+        // messaggio vince, sostituendo un eventuale messaggio di apprendimento ancora visibile.
+        Action.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ActionSession.StatusText) && !string.IsNullOrEmpty(Action.StatusText))
+                StatusMessage = Action.StatusText;
+        };
 
         // Aggiorna la stima token/costo quando arrivano nuovi consumi o cambiano le tariffe.
         _usage.Changed += (_, _) => RefreshUsageOnUi();
@@ -129,14 +141,14 @@ public sealed partial class OverlayViewModel : ObservableObject
         MaxReached = false;
         IsMicMuted = false;
         ElapsedText = "00:00";
-        LearningStatus = Loc.T("Learn_Discarded");
+        StatusMessage = Loc.T("Learn_Discarded");
     }
 
     private void StartTraining()
     {
         MaxReached = false;
         IsMicMuted = false;   // ogni sessione parte col microfono acceso
-        LearningStatus = string.Empty;
+        StatusMessage = string.Empty;
         _recorder.MaxDurationReached += OnMaxDurationReached;
         _recorder.Start();
 
@@ -156,7 +168,7 @@ public sealed partial class OverlayViewModel : ObservableObject
         MaxReached = false;
         ElapsedText = "00:00";
         var reorganizing = Loc.T("Learn_Reorganizing");
-        LearningStatus = reorganizing;
+        StatusMessage = reorganizing;
 
         TrainingSessionInfo? session = null;
         try
@@ -166,7 +178,7 @@ public sealed partial class OverlayViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Arresto della registrazione fallito.");
-            LearningStatus = Loc.T("Learn_SessionCloseError");
+            StatusMessage = Loc.T("Learn_SessionCloseError");
         }
 
         // Tiene il disco sotto controllo eliminando le sessioni più vecchie.
@@ -182,23 +194,23 @@ public sealed partial class OverlayViewModel : ObservableObject
         // Apprendimento in background: non deve bloccare l'overlay (può durare a lungo).
         if (session?.VideoPath is not null)
             _ = RunLearningPipelineAsync(session);
-        else if (LearningStatus == reorganizing)
-            LearningStatus = string.Empty;   // niente video da apprendere (e nessun errore prima)
+        else if (StatusMessage == reorganizing)
+            StatusMessage = string.Empty;   // niente video da apprendere (e nessun errore prima)
     }
 
     private async Task RunLearningPipelineAsync(TrainingSessionInfo session)
     {
-        LearningStatus = Loc.T("Learn_Learning");
+        StatusMessage = Loc.T("Learn_Learning");
         try
         {
             var count = await _pipeline.ProcessSessionAsync(session);
             // Solo un'informazione generica: il numero di memorie create (niente dettagli).
-            LearningStatus = count == 1 ? Loc.T("Learn_LearnedOne") : Loc.T("Learn_LearnedMany", count);
+            StatusMessage = count == 1 ? Loc.T("Learn_LearnedOne") : Loc.T("Learn_LearnedMany", count);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Apprendimento dalla sessione fallito.");
-            LearningStatus = Loc.T("Learn_Failed");
+            StatusMessage = Loc.T("Learn_Failed");
         }
     }
 

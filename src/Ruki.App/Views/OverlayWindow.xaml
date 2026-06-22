@@ -178,13 +178,14 @@
 
                 </StackPanel>
 
-                <!-- Stato dell'apprendimento dopo lo stop (compare solo se valorizzato). -->
-                <TextBlock Text="{Binding LearningStatus}" Foreground="{StaticResource RukiText}" FontSize="11"
+                <!-- UNICA riga di stato dell'overlay (apprendimento o esito breve di un'azione):
+                     compare solo se valorizzata e mostra sempre un solo messaggio (l'ultimo). -->
+                <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource RukiText}" FontSize="11"
                            Margin="6,4,6,0" TextWrapping="Wrap" MaxWidth="320">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding LearningStatus}" Value="">
+                                <DataTrigger Binding="{Binding StatusMessage}" Value="">
                                     <Setter Property="Visibility" Value="Collapsed" />
                                 </DataTrigger>
                             </Style.Triggers>
@@ -192,22 +193,9 @@
                     </TextBlock.Style>
                 </TextBlock>
 
-                <!-- Esecuzione di un compito sul PC: lo stato resta visibile anche a fine esecuzione
-                     (così vedi l'esito); i pulsanti Pausa/Stop solo mentre è in corso. -->
+                <!-- Comandi dell'esecuzione di un compito sul PC: Pausa/Stop, solo mentre è in corso. -->
                 <StackPanel Margin="6,4,6,2">
-                    <TextBlock Text="{Binding Action.StatusText}" Foreground="{StaticResource RukiText}" FontSize="11"
-                               TextWrapping="Wrap" MaxWidth="320">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding Action.StatusText}" Value="">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
-                    <StackPanel Orientation="Horizontal" Margin="0,2,0,0"
+                    <StackPanel Orientation="Horizontal"
                                 Visibility="{Binding Action.IsRunning, Converter={StaticResource BoolToVis}}">
                         <Button Command="{Binding TogglePauseActionCommand}">
                             <Button.Style>

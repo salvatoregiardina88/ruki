@@ -70,6 +70,13 @@ public partial class App : Application
             overlay.Loaded += (_, _) => windows.ShowChat();
             overlay.Show();
 
+            // 4b. L'esito di un'azione va registrato nella cronologia dell'orchestratore (per la
+            //     coerenza della conversazione), anche a chat chiusa. Lo colleghiamo qui, una volta:
+            //     entrambi i servizi sono singleton e vivono per tutta l'app.
+            var action = _host.Services.GetRequiredService<ActionSession>();
+            var orchestrator = _host.Services.GetRequiredService<Ruki.Core.Agents.IOrchestratorAgent>();
+            action.OutcomeReported += (_, outcome) => orchestrator.NoteActionOutcome(outcome);
+
             // 5. Pulizia delle sessioni vecchie in background (non blocca l'avvio).
             var cleaner = _host.Services.GetRequiredService<ISessionCleaner>();
             Task.Run(cleaner.CleanupOldSessions);
@@ -191,6 +198,7 @@ public partial class App : Application
         builder.Services.AddSingleton<Ruki.Core.Automation.IClickIndicator, ClickIndicator>();
         builder.Services.AddSingleton<Ruki.Core.Agents.IActionConfirmation, DialogActionConfirmation>();
         builder.Services.AddSingleton<Ruki.Core.Capture.IPasswordFieldDetector, UiaPasswordFieldDetector>();
+        builder.Services.AddSingleton<Ruki.Core.Automation.ICaretContextProvider, UiaCaretContextProvider>();
         builder.Services.AddSingleton<ActionSession>();
         builder.Services.AddSingleton<Ruki.Core.Abstractions.IActivityState, ActivityState>();
 

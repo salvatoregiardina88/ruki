@@ -162,6 +162,7 @@ public class ActionAgentTests
             new FakeScreen(),
             automation,
             foreground ?? new FakeForegroundWindow(),
+            new NullCaretContextProvider(),
             new NullClickIndicator(),
             memory ?? new FakeMemoryStore(),
             new FakeSettingsService(),
@@ -191,6 +192,11 @@ public class ActionAgentTests
         public void Start() { }
         public void Stop() { }
         public void SetClicking(bool clicking) { }
+    }
+
+    private sealed class NullCaretContextProvider : ICaretContextProvider
+    {
+        public string? Describe() => null;
     }
 
     private sealed class FakeScreen : IScreenCaptureService

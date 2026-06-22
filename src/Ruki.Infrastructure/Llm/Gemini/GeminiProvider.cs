@@ -268,11 +268,18 @@ public sealed class GeminiProvider : ILlmProvider
     /// <summary>Converte la nostra <see cref="LlmRequest"/> nel corpo JSON atteso da Gemini.</summary>
     private static GeminiRequest BuildPayload(LlmRequest request)
     {
-        var contents = request.Messages
-            .Select(m => new GeminiContent(
-                Role: m.Role == ChatRole.User ? "user" : "model",
-                Parts: [new GeminiPart(m.Text)]))
-            .ToList();
+        // Gemini si aspetta turni alternati user/model: fondiamo i messaggi consecutivi dello stesso
+        // ruolo in un unico "content" (più parti). Capita ad es. quando registriamo l'esito di
+        // un'azione subito dopo la risposta dell'assistente: due turni "model" di fila.
+        var contents = new List<GeminiContent>();
+        foreach (var message in request.Messages)
+        {
+            var role = message.Role == ChatRole.User ? "user" : "model";
+            if (contents.Count > 0 && contents[^1].Role == role)
+                contents[^1].Parts.Add(new GeminiPart(message.Text));
+            else
+                contents.Add(new GeminiContent(role, [new GeminiPart(message.Text)]));
+        }
 
         // Eventuali file (video) e immagini inline (screenshot) vengono allegati all'ultimo turno utente.
         if (request.Files is { Count: > 0 } || request.Images is { Count: > 0 })

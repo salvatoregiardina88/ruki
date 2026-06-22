@@ -75,6 +75,36 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <!-- Testo dei messaggi: TextBox in sola lettura, senza bordo/sfondo, così SEMBRA un'etichetta
+             ma il testo è SELEZIONABILE (copia/incolla con Ctrl+C o menu contestuale). Il colore segue
+             il tipo di bolla (utente/errore) come prima. -->
+        <Style x:Key="ChatMessageText" TargetType="TextBox">
+            <Setter Property="IsReadOnly" Value="True" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="IsTabStop" Value="False" />
+            <Setter Property="Cursor" Value="IBeam" />
+            <Setter Property="Foreground" Value="{StaticResource RukiText}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <ScrollViewer x:Name="PART_ContentHost" Focusable="False"
+                                      HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden" />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsUser}" Value="True">
+                    <Setter Property="Foreground" Value="White" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding IsError}" Value="True">
+                    <Setter Property="Foreground" Value="#B00020" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
     </Window.Resources>
 
     <Border Margin="12" CornerRadius="12"
@@ -143,21 +173,7 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
-                                <TextBlock Text="{Binding Text}" TextWrapping="Wrap">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="{StaticResource RukiText}" />
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsUser}" Value="True">
-                                                    <Setter Property="Foreground" Value="White" />
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding IsError}" Value="True">
-                                                    <Setter Property="Foreground" Value="#B00020" />
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
-                                </TextBlock>
+                                <TextBox Text="{Binding Text, Mode=OneWay}" Style="{StaticResource ChatMessageText}" />
                             </Border>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
