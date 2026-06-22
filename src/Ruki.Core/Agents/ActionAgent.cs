@@ -77,11 +77,20 @@ public sealed class ActionAgent : IActionAgent
         If an action is potentially DESTRUCTIVE or IRREVERSIBLE (delete, send/submit, pay, overwrite a
         file, close without saving, etc.), set "risky": true so the user can confirm it before it runs.
 
+        VERIFY YOUR WORK (check, don't assume): set "expectation" to what should be visibly true on the
+        screen right after the action (e.g. "the Replace dialog is open", "the To field shows the
+        address"). At the NEXT step, BEFORE choosing a new action, look at the screenshot and confirm the
+        previous expectation was met; if it was NOT met, do not push on — diagnose what went wrong and
+        fix it. Be especially rigorous after CRITICAL steps (navigation, opening/closing dialogs,
+        submitting, saving, deleting — anything the rest of the task depends on). Before "done", make sure
+        the overall goal is actually achieved and visible on screen. Keep it proportionate: a quick glance
+        for trivial steps, a real check for the critical ones.
+
         Write the user-facing "message" (for done/fail) in the SAME language as the goal.
 
         Reply ONLY with a JSON object, including only the relevant fields:
         { "thought": "...", "action": "...", "x": 0, "y": 0, "text": "..", "amount": 0, "window": "..",
-          "nodeId": "..", "nodeIds": ["..."], "risky": false, "message": ".." }
+          "nodeId": "..", "nodeIds": ["..."], "risky": false, "message": "..", "expectation": ".." }
         Keep "thought" to a single short line (no line breaks). No text outside the JSON.
         """;
 
@@ -207,7 +216,9 @@ public sealed class ActionAgent : IActionAgent
             // Lo schermo è cambiato: cattura il nuovo stato (e la finestra attiva) per il prossimo passo.
             screenshot = _screen.Capture();
             conversation.Add(new ChatMessage(ChatRole.User,
-                $"Result: {note}.\n{DescribeForeground()}{DescribeCaret()}\nHere is the updated screen; what is the next action?"));
+                $"Result: {note}.{DescribeExpectation(action)}\n{DescribeForeground()}{DescribeCaret()}\n"
+                + "Here is the updated screen. First check whether the expected outcome actually happened; "
+                + "if not, fix it. Then decide the next action."));
         }
 
         return new ActionResult(ActionOutcome.LimitReached, null, maxSteps);
@@ -419,6 +430,10 @@ public sealed class ActionAgent : IActionAgent
     /// <summary>Solo la finestra attiva corrente (inviata a ogni passo).</summary>
     private string DescribeForeground() => $"Active window: {DescribeWindow(_foreground.GetForeground())}.";
 
+    /// <summary>Promemoria di cosa il modello si aspettava dopo l'azione, da verificare al passo successivo.</summary>
+    private static string DescribeExpectation(AgentAction action)
+        => string.IsNullOrWhiteSpace(action.Expectation) ? string.Empty : $" Expected outcome: \"{action.Expectation}\".";
+
     /// <summary>
     /// Evidenza (best-effort) di dove si trova il caret di testo: campo a fuoco, riga corrente,
     /// selezione. Inviata insieme allo screenshot perché il caret spesso non è visibile nell'immagine.
@@ -471,7 +486,7 @@ public sealed class ActionAgent : IActionAgent
 
         var type = MapType(dto?.Action);
         return new AgentAction(type, dto?.X, dto?.Y, dto?.Text, dto?.Amount,
-            dto?.Message, dto?.Window, dto?.NodeId, dto?.NodeIds, dto?.Risky ?? false);
+            dto?.Message, dto?.Window, dto?.NodeId, dto?.NodeIds, dto?.Risky ?? false, dto?.Expectation);
     }
 
     private static AgentActionType MapType(string? action) => action?.ToLowerInvariant() switch
@@ -499,5 +514,5 @@ public sealed class ActionAgent : IActionAgent
 
     private sealed record ActionDto(
         string? Action, int? X, int? Y, string? Text, int? Amount, string? Message,
-        string? Window, string? NodeId, List<string>? NodeIds, bool? Risky, string? Thought);
+        string? Window, string? NodeId, List<string>? NodeIds, bool? Risky, string? Thought, string? Expectation);
 }

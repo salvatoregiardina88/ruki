@@ -31,7 +31,8 @@ public sealed record AgentAction(
     string? Window = null,  // finestra/app attesa in primo piano per gli input da tastiera (Type/Key)
     string? NodeId = null,  // nodo di memoria da espandere (ExpandNode)
     IReadOnlyList<string>? NodeIds = null, // memorie da leggere (ReadMemory)
-    bool Risky = false)     // il modello segnala un'azione distruttiva/irreversibile da confermare
+    bool Risky = false,     // il modello segnala un'azione distruttiva/irreversibile da confermare
+    string? Expectation = null) // cosa il modello si aspetta di vedere dopo l'azione (da verificare al passo dopo)
 {
     /// <summary>
     /// Descrizione tecnica e breve dell'azione (in inglese, come i prompt): usata nei log,
