@@ -200,7 +200,7 @@ public sealed class ActionAgent : IActionAgent
             // Azione sul PC.
             await controller.WaitWhilePausedAsync(token);
             token.ThrowIfCancellationRequested();
-            var note = await ExecuteAsync(action, token);
+            var note = await ExecuteAsync(action, screenshot, token);
 
             await Task.Delay(StepDelay, token);   // pausa breve: l'utente segue e la UI si aggiorna
 
@@ -236,8 +236,10 @@ public sealed class ActionAgent : IActionAgent
             AgentAction action;
             try
             {
-                // Le coordinate arrivano normalizzate 0–1000: le convertiamo in pixel sulla risoluzione reale.
-                action = ToPixels(Parse(response.Text), screenshot);
+                // L'azione resta nelle coordinate del modello (normalizzate 0–1000): così le note che gli
+                // rimandiamo parlano la sua stessa lingua. La conversione in pixel avviene solo dove serve
+                // davvero (esecuzione del click e cerchio rosso del debug).
+                action = Parse(response.Text);
             }
             catch (LlmException) when (attempt < MaxParseAttempts)
             {
@@ -251,13 +253,15 @@ public sealed class ActionAgent : IActionAgent
             }
 
             conversation.Add(new ChatMessage(ChatRole.Assistant, response.Text));
-            _trace.Add(new ActionTraceEntry(ActionTraceKind.Received, response.Text, screenshot.JpegBytes, action.X, action.Y, step));
+            // Il cerchio rosso del debug va disegnato in pixel sull'immagine catturata.
+            _trace.Add(new ActionTraceEntry(ActionTraceKind.Received, response.Text, screenshot.JpegBytes,
+                ToPixelX(action.X, screenshot), ToPixelY(action.Y, screenshot), step));
             return action;
         }
     }
 
     /// <summary>Esegue l'azione sul PC e restituisce la nota da mettere in conversazione (eseguita o saltata).</summary>
-    private async Task<string> ExecuteAsync(AgentAction action, CancellationToken token)
+    private async Task<string> ExecuteAsync(AgentAction action, CapturedFrame frame, CancellationToken token)
     {
         // Per gli input da tastiera, verifica che la finestra attesa sia davvero in primo piano.
         if (action.Type is AgentActionType.Type or AgentActionType.Key && !string.IsNullOrWhiteSpace(action.Window))
@@ -272,16 +276,20 @@ public sealed class ActionAgent : IActionAgent
             }
         }
 
+        // Le coordinate del modello (0–1000) diventano pixel reali solo qui, all'atto dell'esecuzione.
+        var px = ToPixelX(action.X, frame) ?? 0;
+        var py = ToPixelY(action.Y, frame) ?? 0;
+
         switch (action.Type)
         {
             case AgentActionType.Click:
-                await ClickAsync(action.X ?? 0, action.Y ?? 0, MouseButton.Left, doubleClick: false, token);
+                await ClickAsync(px, py, MouseButton.Left, doubleClick: false, token);
                 break;
             case AgentActionType.DoubleClick:
-                await ClickAsync(action.X ?? 0, action.Y ?? 0, MouseButton.Left, doubleClick: true, token);
+                await ClickAsync(px, py, MouseButton.Left, doubleClick: true, token);
                 break;
             case AgentActionType.RightClick:
-                await ClickAsync(action.X ?? 0, action.Y ?? 0, MouseButton.Right, doubleClick: false, token);
+                await ClickAsync(px, py, MouseButton.Right, doubleClick: false, token);
                 break;
             case AgentActionType.Type:
                 if (!string.IsNullOrEmpty(action.Text))
@@ -292,7 +300,7 @@ public sealed class ActionAgent : IActionAgent
                     _input.PressKeys(action.Text);
                 break;
             case AgentActionType.Scroll:
-                _input.Scroll(action.X ?? 0, action.Y ?? 0, action.Amount ?? -3);
+                _input.Scroll(px, py, action.Amount ?? -3);
                 break;
             case AgentActionType.Wait:
                 await Task.Delay(Math.Clamp(action.Amount ?? 500, 0, 10_000), token);
@@ -435,18 +443,13 @@ public sealed class ActionAgent : IActionAgent
     /// <summary>Contesto completo (attiva + elenco), usato solo nel primo turno.</summary>
     private string DescribeWindowContext() => $"{DescribeForeground()} {DescribeOpenWindows()}";
 
-    /// <summary>Converte le coordinate normalizzate (0–1000) restituite dal modello in pixel reali.</summary>
-    private static AgentAction ToPixels(AgentAction action, CapturedFrame frame)
-    {
-        if (action.X is null && action.Y is null)
-            return action;
+    /// <summary>Converte una X normalizzata (0–1000) restituita dal modello in pixel sulla larghezza del frame.</summary>
+    private static int? ToPixelX(int? normalized, CapturedFrame frame)
+        => normalized is { } nx ? (int)Math.Round(Math.Clamp(nx, 0, 1000) / 1000.0 * frame.Width) : null;
 
-        return action with
-        {
-            X = action.X is { } nx ? (int)Math.Round(Math.Clamp(nx, 0, 1000) / 1000.0 * frame.Width) : null,
-            Y = action.Y is { } ny ? (int)Math.Round(Math.Clamp(ny, 0, 1000) / 1000.0 * frame.Height) : null,
-        };
-    }
+    /// <summary>Converte una Y normalizzata (0–1000) restituita dal modello in pixel sull'altezza del frame.</summary>
+    private static int? ToPixelY(int? normalized, CapturedFrame frame)
+        => normalized is { } ny ? (int)Math.Round(Math.Clamp(ny, 0, 1000) / 1000.0 * frame.Height) : null;
 
     // -------------------------------------------------------------- parsing
 

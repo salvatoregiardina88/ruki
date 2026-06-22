@@ -36,7 +36,8 @@ public sealed record AgentAction(
     /// <summary>
     /// Descrizione tecnica e breve dell'azione (in inglese, come i prompt): usata nei log,
     /// nelle note inviate al modello e nel dialogo di conferma. Per "type"/"key" mostra anche
-    /// il contenuto, utile per decidere se confermare.
+    /// il contenuto, utile per decidere se confermare. Le coordinate X/Y sono nella scala del
+    /// modello (normalizzate 0–1000), così la nota rimandata al modello parla la sua stessa lingua.
     /// </summary>
     public string Describe() => Type switch
     {

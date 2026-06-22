@@ -49,7 +49,12 @@ public class ActionAgentTests
 
         Assert.True(result.Success);
         Assert.Equal(2, result.Steps);
-        Assert.Contains("click(400,300)", automation.Actions);
+        Assert.Contains("click(400,300)", automation.Actions);   // eseguito davvero in pixel
+
+        // La nota rimandata al modello deve usare le SUE coordinate (0–1000), non i pixel: altrimenti
+        // il modello si confonde ("ho cliccato a 500 ma il sistema dice 400?") e "si corregge" sbagliando.
+        Assert.Contains(provider.LastRequest!.Messages, m => m.Text.Contains("Click at (500,500)"));
+        Assert.DoesNotContain(provider.LastRequest!.Messages, m => m.Text.Contains("(400,300)"));
     }
 
     [Fact]
