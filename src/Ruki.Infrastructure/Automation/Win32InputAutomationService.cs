@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 using Ruki.Core.Automation;
 
 namespace Ruki.Infrastructure.Automation;
@@ -11,6 +12,10 @@ namespace Ruki.Infrastructure.Automation;
 public sealed class Win32InputAutomationService : IInputAutomationService
 {
     private const int WheelDelta = 120;
+
+    private readonly ILogger<Win32InputAutomationService> _logger;
+
+    public Win32InputAutomationService(ILogger<Win32InputAutomationService> logger) => _logger = logger;
 
     public void MoveMouse(int x, int y)
     {
@@ -34,6 +39,18 @@ public sealed class Win32InputAutomationService : IInputAutomationService
     public void Click(int x, int y, MouseButton button = MouseButton.Left)
     {
         MoveMouse(x, y);
+
+        // Diagnostica click "fuori bersaglio": confronta dove volevamo cliccare con dove è finito davvero
+        // il cursore (un divario rivela virtualizzazione DPI) e riporta la geometria schermi (multi-monitor).
+        GetCursorPos(out var actual);
+        _logger.LogInformation(
+            "Click diag: target=({X},{Y}) cursor=({AX},{AY}) primary={PW}x{PH} virtual={VW}x{VH}@({VX},{VY}) monitors={M}",
+            x, y, actual.X, actual.Y,
+            GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN),
+            GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN),
+            GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN),
+            GetSystemMetrics(SM_CMONITORS));
+
         var (down, up) = ButtonFlags(button);
         SendMouse(down);
         SendMouse(up);
@@ -212,4 +229,16 @@ public sealed class Win32InputAutomationService : IInputAutomationService
     [DllImport("user32.dll")]
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool GetCursorPos(out POINT point);
+
+    // Metriche schermo per la diagnostica click (primario + virtual desktop multi-monitor).
+    private const int SM_CXSCREEN = 0;
+    private const int SM_CYSCREEN = 1;
+    private const int SM_XVIRTUALSCREEN = 76;
+    private const int SM_YVIRTUALSCREEN = 77;
+    private const int SM_CXVIRTUALSCREEN = 78;
+    private const int SM_CYVIRTUALSCREEN = 79;
+    private const int SM_CMONITORS = 80;
+
+    [DllImport("user32.dll")]
+    private static extern int GetSystemMetrics(int index);
 }

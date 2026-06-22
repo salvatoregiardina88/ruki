@@ -71,6 +71,10 @@ public sealed class ActionAgent : IActionAgent
         element's full height and target its vertical middle, not its top edge or the text baseline. If a
         page needs to load, use "wait".
 
+        If the screenshot contains a SMALLER nested copy of the desktop (e.g. a screen-recording or
+        mirroring preview such as OBS, a "share screen" thumbnail, or a remote-desktop window), that copy
+        is NOT the real UI — never click inside it; act on the real, full-size window instead.
+
         TEXT EDITING & CURSOR: a screenshot may NOT show the blinking text caret, so never assume where
         it is. When a "Text focus" note is provided (the focused field, the line the caret is on, and any
         selection), rely on it to know exactly where typing and Delete/Backspace will act. To edit or
