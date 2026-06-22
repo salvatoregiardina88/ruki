@@ -300,7 +300,9 @@ public sealed class OrchestratorAgent : IOrchestratorAgent
     /// <summary>Estrae risposta + eventuale obiettivo dal JSON del modello; in fallback, testo semplice.</summary>
     private static OrchestratorReply ParseReply(string responseText)
     {
-        var json = ExtractJsonObject(responseText);
+        // Ripara gli a capo grezzi nelle stringhe (le risposte di chat sono spesso multilinea):
+        // evita che un JSON tecnicamente non valido finisca nel fallback testo-grezzo.
+        var json = JsonText.RepairControlChars(ExtractJsonObject(responseText));
         try
         {
             var dto = JsonSerializer.Deserialize<ReplyDto>(json, JsonOptions);

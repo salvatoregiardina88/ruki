@@ -82,7 +82,7 @@ public sealed class ActionAgent : IActionAgent
         Reply ONLY with a JSON object, including only the relevant fields:
         { "thought": "...", "action": "...", "x": 0, "y": 0, "text": "..", "amount": 0, "window": "..",
           "nodeId": "..", "nodeIds": ["..."], "risky": false, "message": ".." }
-        No text outside the JSON.
+        Keep "thought" to a single short line (no line breaks). No text outside the JSON.
         """;
 
     private readonly ILlmProvider _llm;
@@ -213,26 +213,47 @@ public sealed class ActionAgent : IActionAgent
         return new ActionResult(ActionOutcome.LimitReached, null, maxSteps);
     }
 
+    /// <summary>Numero massimo di tentativi di interpretare la risposta di un passo prima di arrendersi.</summary>
+    private const int MaxParseAttempts = 2;
+
     private async Task<AgentAction> DecideAsync(List<ChatMessage> conversation, CapturedFrame screenshot, int step, CancellationToken token)
     {
-        var request = new LlmRequest
+        for (var attempt = 1; ; attempt++)
         {
-            SystemInstruction = SystemPrompt,
-            Messages = conversation.ToArray(),
-            // Solo l'ultimo screenshot viene inviato (allegato all'ultimo turno utente).
-            Images = [new LlmImage(screenshot.JpegBytes, "image/jpeg")],
-            Temperature = 0.1,
-        };
+            var request = new LlmRequest
+            {
+                SystemInstruction = SystemPrompt,
+                Messages = conversation.ToArray(),
+                // Solo l'ultimo screenshot viene inviato (allegato all'ultimo turno utente).
+                Images = [new LlmImage(screenshot.JpegBytes, "image/jpeg")],
+                Temperature = 0.1,
+            };
 
-        _trace.Add(new ActionTraceEntry(ActionTraceKind.Sent, conversation[^1].Text, screenshot.JpegBytes, null, null, step));
+            _trace.Add(new ActionTraceEntry(ActionTraceKind.Sent, conversation[^1].Text, screenshot.JpegBytes, null, null, step));
 
-        var response = await _llm.CompleteAsync(request, token);
-        // Le coordinate arrivano normalizzate 0–1000: le convertiamo in pixel sulla risoluzione reale.
-        var action = ToPixels(Parse(response.Text), screenshot);
+            var response = await _llm.CompleteAsync(request, token);
 
-        conversation.Add(new ChatMessage(ChatRole.Assistant, response.Text));
-        _trace.Add(new ActionTraceEntry(ActionTraceKind.Received, response.Text, screenshot.JpegBytes, action.X, action.Y, step));
-        return action;
+            AgentAction action;
+            try
+            {
+                // Le coordinate arrivano normalizzate 0–1000: le convertiamo in pixel sulla risoluzione reale.
+                action = ToPixels(Parse(response.Text), screenshot);
+            }
+            catch (LlmException) when (attempt < MaxParseAttempts)
+            {
+                // Risposta non interpretabile (es. JSON malformato): invece di abortire l'intero compito,
+                // chiediamo al modello di riformularla come JSON valido e riproviamo lo stesso passo.
+                conversation.Add(new ChatMessage(ChatRole.Assistant, response.Text));
+                conversation.Add(new ChatMessage(ChatRole.User,
+                    "Your previous reply was not a single valid JSON object. Reply AGAIN with ONLY one valid "
+                    + "JSON object for the next action, escaping any line breaks inside string values."));
+                continue;
+            }
+
+            conversation.Add(new ChatMessage(ChatRole.Assistant, response.Text));
+            _trace.Add(new ActionTraceEntry(ActionTraceKind.Received, response.Text, screenshot.JpegBytes, action.X, action.Y, step));
+            return action;
+        }
     }
 
     /// <summary>Esegue l'azione sul PC e restituisce la nota da mettere in conversazione (eseguita o saltata).</summary>
@@ -431,7 +452,9 @@ public sealed class ActionAgent : IActionAgent
 
     private AgentAction Parse(string responseText)
     {
-        var json = ExtractJsonObject(responseText);
+        // I modelli scrivono spesso "thought" su più righe: ripariamo gli a capo grezzi nelle stringhe
+        // prima di deserializzare, così un campo multilinea non fa fallire (e abortire) l'intera azione.
+        var json = JsonText.RepairControlChars(ExtractJsonObject(responseText));
         ActionDto? dto;
         try
         {
