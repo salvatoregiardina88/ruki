@@ -25,12 +25,6 @@ public interface IOrchestratorAgent
     Task<OrchestratorReply> SendAsync(string userMessage, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Estrae dalla conversazione un profilo sintetico dell'utente e lo salva in memoria,
-    /// così Ruki lo "ricorda" anche nelle sessioni future. Operazione best-effort.
-    /// </summary>
-    Task UpdateUserProfileAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Registra in cronologia l'esito di un'azione eseguita sul PC, come se l'assistente avesse
     /// riferito il risultato. Serve a mantenere la conversazione coerente: i messaggi successivi
     /// dell'utente possono fare riferimento a ciò che l'azione ha prodotto. Va chiamato anche se la

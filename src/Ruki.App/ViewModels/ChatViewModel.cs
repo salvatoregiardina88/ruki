@@ -89,10 +89,6 @@ public sealed partial class ChatViewModel : ObservableObject
                 Messages.Add(ChatBubble.Assistant(Loc.T("Chat_Executing", reply.ActionGoal)));
                 _action.Start(reply.ActionGoal);
             }
-
-            // Aggiorna il profilo in memoria, in background. L'orchestratore decide SE rifarlo davvero
-            // (solo dopo abbastanza nuovi messaggi) e lo UNISCE al profilo esistente, senza sovrascriverlo.
-            _ = UpdateProfileInBackgroundAsync();
         }
         catch (LlmException ex)
         {
@@ -107,19 +103,6 @@ public sealed partial class ChatViewModel : ObservableObject
         finally
         {
             IsBusy = false;
-        }
-    }
-
-    /// <summary>Aggiorna il profilo utente senza disturbare la chat: gli errori vengono solo loggati.</summary>
-    private async Task UpdateProfileInBackgroundAsync()
-    {
-        try
-        {
-            await _orchestrator.UpdateUserProfileAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Aggiornamento del profilo utente non riuscito.");
         }
     }
 }

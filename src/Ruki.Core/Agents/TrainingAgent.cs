@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Logging;
 using Ruki.Core.Llm;
+using Ruki.Core.Memory;
 
 namespace Ruki.Core.Agents;
 
@@ -71,11 +72,17 @@ public sealed class TrainingAgent : ITrainingAgent
         Capture every detail that is SPECIFIC and needed to reproduce the task (exact labels, values,
         URLs); skip what is generic or obvious GUI behavior.
 
+        USER PROFILE (rare, optional): if the session reveals DURABLE information about the USER that
+        rarely changes — their role/profession, the systems/tools they regularly use, stable
+        preferences, long-term context — set "userProfileNote" to a short statement of it. Leave it null
+        for anything ephemeral or specific to this single task. Most sessions leave it null.
+
         IMPORTANT: write "title", "summary" and "content" in the SAME language the user uses in the
         session (their speech / chat messages), e.g. Italian or English.
 
-        Reply ONLY with a JSON object containing the "memories" array; each element is:
+        Reply ONLY with a JSON object with an optional "userProfileNote" and the "memories" array:
         {
+          "userProfileNote": null or "durable fact about the user (rare)",
           "memories": [
             {
               "kind": "procedura" or "nozione",
@@ -94,11 +101,13 @@ public sealed class TrainingAgent : ITrainingAgent
         """;
 
     private readonly ILlmProvider _llm;
+    private readonly IUserProfileMemory _profile;
     private readonly ILogger<TrainingAgent> _logger;
 
-    public TrainingAgent(ILlmProvider llm, ILogger<TrainingAgent> logger)
+    public TrainingAgent(ILlmProvider llm, IUserProfileMemory profile, ILogger<TrainingAgent> logger)
     {
         _llm = llm;
+        _profile = profile;
         _logger = logger;
     }
 
@@ -130,7 +139,28 @@ public sealed class TrainingAgent : ITrainingAgent
         };
 
         var response = await _llm.CompleteAsync(request, cancellationToken);
+
+        // Se la sessione ha rivelato un fatto DUREVOLE sull'utente, aggiorniamo il profilo (merge
+        // parsimonioso, best-effort): è indipendente dall'estrazione delle memorie.
+        await RememberProfileNoteIfAnyAsync(response.Text, cancellationToken);
+
         return Parse(response.Text);
+    }
+
+    /// <summary>Se il JSON contiene una "userProfileNote", la unisce al profilo utente (best-effort).</summary>
+    private async Task RememberProfileNoteIfAnyAsync(string responseText, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var json = ExtractJsonObject(responseText);
+            var note = JsonSerializer.Deserialize<KnowledgeListDto>(json, Json)?.UserProfileNote;
+            if (!string.IsNullOrWhiteSpace(note))
+                await _profile.RememberAsync(note, cancellationToken);
+        }
+        catch (JsonException)
+        {
+            // Il parsing "vero" delle memorie gestisce gli errori; qui restiamo best-effort.
+        }
     }
 
     /// <summary>
@@ -190,7 +220,7 @@ public sealed class TrainingAgent : ITrainingAgent
         return start >= 0 && end > start ? text[start..(end + 1)] : text;
     }
 
-    private sealed record KnowledgeListDto(List<KnowledgeDto>? Memories);
+    private sealed record KnowledgeListDto(List<KnowledgeDto>? Memories, string? UserProfileNote);
 
     private sealed record KnowledgeDto(string? Kind, string? Title, string? Summary, string? Content, List<string>? CategoryPath);
 }

@@ -27,7 +27,7 @@ public class TrainingAgentTests
                 }
                 """,
         };
-        var agent = new TrainingAgent(provider, NullLogger<TrainingAgent>.Instance);
+        var agent = new TrainingAgent(provider, new FakeUserProfileMemory(), NullLogger<TrainingAgent>.Instance);
 
         var memories = await agent.AnalyzeAsync("C:/tmp/video.mp4", "timeline...", ["Software"]);
 
@@ -52,7 +52,7 @@ public class TrainingAgentTests
                 ] }
                 """,
         };
-        var agent = new TrainingAgent(provider, NullLogger<TrainingAgent>.Instance);
+        var agent = new TrainingAgent(provider, new FakeUserProfileMemory(), NullLogger<TrainingAgent>.Instance);
 
         var memories = await agent.AnalyzeAsync("v.mp4", "t", []);
 
@@ -71,7 +71,7 @@ public class TrainingAgentTests
         {
             Reply = "Ecco:\n```json\n{\"title\":\"T\",\"summary\":\"S\",\"content\":\"C\",\"categoryPath\":[\"X\"]}\n```",
         };
-        var agent = new TrainingAgent(provider, NullLogger<TrainingAgent>.Instance);
+        var agent = new TrainingAgent(provider, new FakeUserProfileMemory(), NullLogger<TrainingAgent>.Instance);
 
         var memories = await agent.AnalyzeAsync("v.mp4", "t", []);
 
@@ -84,7 +84,7 @@ public class TrainingAgentTests
     public async Task AnalyzeAsync_WhenNoContent_Throws()
     {
         var provider = new FakeLlmProvider { Reply = "{ \"memories\": [ { \"title\": \"vuoto\" } ] }" };
-        var agent = new TrainingAgent(provider, NullLogger<TrainingAgent>.Instance);
+        var agent = new TrainingAgent(provider, new FakeUserProfileMemory(), NullLogger<TrainingAgent>.Instance);
 
         await Assert.ThrowsAsync<Ruki.Core.Llm.LlmException>(() => agent.AnalyzeAsync("v.mp4", "t", []));
     }

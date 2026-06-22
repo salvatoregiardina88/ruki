@@ -284,7 +284,7 @@ public sealed class MemoryMaintenanceAgent : IMemoryMaintenanceAgent
                     Walk(child.Id, path);
                 }
                 else if (!child.IsObsolete
-                    && !string.Equals(child.Title, OrchestratorAgent.ProfileNodeTitle, StringComparison.OrdinalIgnoreCase)
+                    && !string.Equals(child.Title, UserProfileMemory.ProfileNodeTitle, StringComparison.OrdinalIgnoreCase)
                     && _store.GetNode(child.Id) is { } full)
                 {
                     leaves.Add((full, path));   // ignoriamo le archiviate e il profilo utente (speciale)

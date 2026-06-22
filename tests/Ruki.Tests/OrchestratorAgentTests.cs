@@ -15,8 +15,8 @@ namespace Ruki.Tests;
 public class OrchestratorAgentTests
 {
     private static OrchestratorAgent CreateAgent(
-        ILlmProvider provider, IMemoryStore? memory = null, bool hasApiKey = true)
-        => new(provider, memory ?? new FakeMemoryStore(),
+        ILlmProvider provider, IUserProfileMemory? profile = null, bool hasApiKey = true)
+        => new(provider, profile ?? new FakeUserProfileMemory(),
             new FakeSecretStore(withGeminiKey: hasApiKey), new FakeActivityState(),
             NullLogger<OrchestratorAgent>.Instance);
 
@@ -71,7 +71,7 @@ public class OrchestratorAgentTests
     public async Task SendAsync_IncludesCurrentActivityInSystemInstruction()
     {
         var provider = new FakeLlmProvider { Reply = "ok" };
-        var agent = new OrchestratorAgent(provider, new FakeMemoryStore(),
+        var agent = new OrchestratorAgent(provider, new FakeUserProfileMemory(),
             new FakeSecretStore(withGeminiKey: true), new FakeActivityState(RukiActivity.Training),
             NullLogger<OrchestratorAgent>.Instance);
 
@@ -94,15 +94,9 @@ public class OrchestratorAgentTests
     [Fact]
     public async Task SendAsync_IncludesKnownProfileInSystemInstruction()
     {
-        var memory = new FakeMemoryStore();
-        memory.Add(new MemoryNode
-        {
-            Title = "Profilo utente",
-            Type = MemoryNodeType.Memory,
-            Content = "È un commercialista.",
-        });
+        var profile = new FakeUserProfileMemory { Active = "È un commercialista." };
         var provider = new FakeLlmProvider { Reply = "ok" };
-        var agent = CreateAgent(provider, memory);
+        var agent = CreateAgent(provider, profile);
 
         await agent.SendAsync("ciao");
 
@@ -110,62 +104,31 @@ public class OrchestratorAgentTests
     }
 
     [Fact]
-    public async Task UpdateUserProfileAsync_SavesProfileNode()
+    public async Task SendAsync_WhenModelSetsProfileNote_RemembersDurableFact()
     {
-        var memory = new FakeMemoryStore();
-        var provider = new FakeLlmProvider { Reply = "- Si occupa di contabilità" };
-        var agent = CreateAgent(provider, memory);
+        var profile = new FakeUserProfileMemory();
+        var provider = new FakeLlmProvider
+        {
+            Reply = "{ \"reply\": \"Annotato!\", \"actionGoal\": null, \"profileNote\": \"L'utente è un commercialista\" }",
+        };
+        var agent = CreateAgent(provider, profile);
 
-        await agent.SendAsync("mi occupo di contabilità");
-        await agent.UpdateUserProfileAsync();
+        var reply = await agent.SendAsync("sono un commercialista");
 
-        var profile = memory.GetChildren(null).Single(n => n.Title == "Profilo utente");
-        Assert.Equal("- Si occupa di contabilità", memory.GetNode(profile.Id)!.Content);
+        Assert.Equal("Annotato!", reply.Text);
+        Assert.Equal("L'utente è un commercialista", profile.LastRemembered);   // davvero scritto, non solo "detto"
     }
 
     [Fact]
-    public async Task UpdateUserProfileAsync_WithoutUserMessages_DoesNothing()
+    public async Task SendAsync_WhenNoProfileNote_RemembersNothing()
     {
-        var memory = new FakeMemoryStore();
-        var agent = CreateAgent(new FakeLlmProvider { Reply = "x" }, memory);
+        var profile = new FakeUserProfileMemory();
+        var provider = new FakeLlmProvider { Reply = "{ \"reply\": \"Ciao!\", \"actionGoal\": null, \"profileNote\": null }" };
+        var agent = CreateAgent(provider, profile);
 
-        await agent.UpdateUserProfileAsync();
+        await agent.SendAsync("ciao");
 
-        Assert.Empty(memory.GetChildren(null));
-    }
-
-    [Fact]
-    public async Task UpdateUserProfileAsync_PassesExistingProfileToModel_ForMerge()
-    {
-        var memory = new FakeMemoryStore();
-        memory.Add(new MemoryNode { Title = "Profilo utente", Type = MemoryNodeType.Memory, Content = "- Sviluppatore C#" });
-        var provider = new FakeLlmProvider { Reply = "- Sviluppatore C#\n- Usa Visual Studio" };
-        var agent = CreateAgent(provider, memory);
-
-        // Abbastanza turni per superare la soglia di parsimonia (il profilo esiste già).
-        await agent.SendAsync("uso visual studio");
-        await agent.SendAsync("e git");
-        await agent.SendAsync("al lavoro");
-        await agent.SendAsync("ogni giorno");
-        await agent.UpdateUserProfileAsync();
-
-        // Il profilo ESISTENTE viene passato al modello: si aggiorna unendo, non sovrascrivendo alla cieca.
-        Assert.Contains("Sviluppatore C#", provider.LastRequest!.Messages[0].Text);
-    }
-
-    [Fact]
-    public async Task UpdateUserProfileAsync_SkipsWhenProfileExistsAndFewNewTurns()
-    {
-        var memory = new FakeMemoryStore();
-        memory.Add(new MemoryNode { Title = "Profilo utente", Type = MemoryNodeType.Memory, Content = "- Sviluppatore" });
-        var provider = new FakeLlmProvider { Reply = "x" };
-        var agent = CreateAgent(provider, memory);
-
-        await agent.SendAsync("ciao");   // un solo turno utente: sotto la soglia
-        provider.LastRequest = null;     // così verifichiamo che NON parta una chiamata di aggiornamento
-        await agent.UpdateUserProfileAsync();
-
-        Assert.Null(provider.LastRequest);   // profilo già presente + pochi turni → nessun aggiornamento
+        Assert.Null(profile.LastRemembered);
     }
 
     [Fact]
@@ -175,38 +138,13 @@ public class OrchestratorAgentTests
         try
         {
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("it-IT");
-            var memory = new FakeMemoryStore();
-            var agent = CreateAgent(new FakeLlmProvider(), memory);
+            var profile = new FakeUserProfileMemory();
+            var agent = CreateAgent(new FakeLlmProvider(), profile);
 
             Assert.Contains("raccontami", agent.WelcomeMessage);   // primo avvio: chiede l'introduzione
 
-            memory.Add(new MemoryNode { Title = "Profilo utente", Type = MemoryNodeType.Memory, Content = "È uno sviluppatore." });
+            profile.Active = "È uno sviluppatore.";
             Assert.Contains("Bentornato", agent.WelcomeMessage);   // utente già conosciuto
-        }
-        finally
-        {
-            CultureInfo.CurrentUICulture = original;
-        }
-    }
-
-    [Fact]
-    public void WelcomeMessage_WhenProfileDisabled_DoesNotClaimToKnowUser()
-    {
-        var original = CultureInfo.CurrentUICulture;
-        try
-        {
-            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("it-IT");
-            var memory = new FakeMemoryStore();
-            memory.Add(new MemoryNode
-            {
-                Title = "Profilo utente",
-                Type = MemoryNodeType.Memory,
-                Content = "È uno sviluppatore.",
-                IsObsolete = true,   // profilo archiviato/disattivato
-            });
-            var agent = CreateAgent(new FakeLlmProvider(), memory);
-
-            Assert.Contains("raccontami", agent.WelcomeMessage);   // primo avvio, non "Bentornato"
         }
         finally
         {
@@ -238,7 +176,7 @@ public class OrchestratorAgentTests
         try
         {
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en-US");
-            var agent = CreateAgent(new FakeLlmProvider(), new FakeMemoryStore());
+            var agent = CreateAgent(new FakeLlmProvider());
 
             Assert.Contains("tell me a bit about yourself", agent.WelcomeMessage);
         }

@@ -15,9 +15,6 @@ namespace Ruki.Core.Agents;
 /// </summary>
 public sealed class OrchestratorAgent : IOrchestratorAgent
 {
-    /// <summary>Titolo del nodo di memoria in cui salviamo il profilo dell'utente.</summary>
-    public const string ProfileNodeTitle = "Profilo utente";
-
     // Istruzione di sistema di base (in inglese: i modelli seguono meglio le istruzioni in inglese,
     // ma rispondono nella lingua dell'utente). Definisce chi è Ruki e come si comporta l'orchestratore.
     private const string BaseSystemPrompt =
@@ -45,51 +42,36 @@ public sealed class OrchestratorAgent : IOrchestratorAgent
           clearly and self-contained. Otherwise leave "actionGoal" as null.
         - Do not invent capabilities you don't have; if something isn't possible, say so honestly.
 
+        LONG-TERM MEMORY about the user: if (and ONLY if) the user shares DURABLE information that rarely
+        changes and is worth remembering across sessions — their role/profession, the systems and tools
+        they regularly use, stable preferences, long-term context — set "profileNote" to a short statement
+        of that fact, in the user's language. For ordinary or EPHEMERAL things (what they are doing today,
+        transient details, small talk), leave "profileNote" null. Only tell the user you have remembered or
+        saved something if you actually set "profileNote" — never claim to remember it without setting it.
+
         Reply ALWAYS and ONLY with a JSON object:
-        { "reply": "your message to the user, in the user's language", "actionGoal": null or "goal to execute" }
+        { "reply": "your message to the user, in the user's language", "actionGoal": null or "goal to execute",
+          "profileNote": null or "durable fact about the user to remember" }
         No text outside the JSON.
         """;
 
-    // Istruzione per AGGIORNARE (non sovrascrivere) il profilo: parte da quello esistente e lo
-    // arricchisce/corregge con la conversazione recente, senza perdere ciò che è ancora valido.
-    private const string ProfileUpdatePrompt =
-        """
-        You maintain a concise profile of the user for Ruki's internal memory: who they are, their
-        job/role, the tools and software they use, their working context, and how Ruki can help them.
-
-        You are given the CURRENT profile (it may be empty) and the RECENT conversation. Output the
-        UPDATED profile, following these rules:
-        - PRESERVE everything in the current profile that is still valid — never drop a fact just because
-          it is not mentioned in the recent conversation.
-        - ADD what newly emerges from the conversation, and CORRECT anything it shows is wrong or outdated.
-        - Do not invent anything. Be concise: short bullet points, in the user's language.
-        Output ONLY the updated profile text, with no preamble.
-        """;
-
-    /// <summary>Quanti nuovi turni utente devono accumularsi dall'ultimo aggiornamento prima di rifare il profilo.</summary>
-    private const int ProfileUpdateEveryNUserTurns = 4;
-
     private readonly List<ChatMessage> _history = [];
 
-    // Stato per aggiornare il profilo con parsimonia (anti-riscrittura continua) e senza run concorrenti.
-    private int _userTurnsAtLastProfileUpdate;
-    private bool _profileUpdateRunning;
-
     private readonly ILlmProvider _llm;
-    private readonly IMemoryStore _memory;
+    private readonly IUserProfileMemory _profile;
     private readonly ISecretStore _secrets;
     private readonly IActivityState _activity;
     private readonly ILogger<OrchestratorAgent> _logger;
 
     public OrchestratorAgent(
         ILlmProvider llm,
-        IMemoryStore memory,
+        IUserProfileMemory profile,
         ISecretStore secrets,
         IActivityState activity,
         ILogger<OrchestratorAgent> logger)
     {
         _llm = llm;
-        _memory = memory;
+        _profile = profile;
         _secrets = secrets;
         _activity = activity;
         _logger = logger;
@@ -127,7 +109,7 @@ public sealed class OrchestratorAgent : IOrchestratorAgent
                       + "Fatto questo, torna qui e raccontami di te!";
 
             // Solo un profilo ATTIVO ci fa dire "ci conosciamo": se è archiviato, è come non averlo.
-            var known = !string.IsNullOrWhiteSpace(GetActiveProfileNode()?.Content);
+            var known = !string.IsNullOrWhiteSpace(_profile.GetActiveProfile());
 
             return (english, known) switch
             {
@@ -189,6 +171,12 @@ public sealed class OrchestratorAgent : IOrchestratorAgent
             var reply = ParseReply(response.Text);
             // In cronologia teniamo il testo "pulito" per l'utente, non il JSON grezzo.
             _history.Add(new ChatMessage(ChatRole.Assistant, reply.Text));
+
+            // Se l'orchestratore ha DECISO di ricordare un fatto durevole sull'utente, lo scriviamo
+            // davvero in memoria (merge parsimonioso), in background per non rallentare la risposta.
+            if (!string.IsNullOrWhiteSpace(reply.ProfileNote))
+                _ = _profile.RememberAsync(reply.ProfileNote);
+
             return reply;
         }
         catch
@@ -198,59 +186,6 @@ public sealed class OrchestratorAgent : IOrchestratorAgent
             _history.RemoveAt(_history.Count - 1);
             _logger.LogWarning("Invio messaggio all'orchestratore fallito.");
             throw;
-        }
-    }
-
-    public async Task UpdateUserProfileAsync(CancellationToken cancellationToken = default)
-    {
-        if (_profileUpdateRunning)
-            return;
-
-        // Senza messaggi dell'utente non c'è nulla da cui ricavare un profilo.
-        var userTurns = _history.Count(m => m.Role == ChatRole.User);
-        if (userTurns == 0)
-            return;
-
-        var existing = GetProfileNode();
-        var hasProfile = !string.IsNullOrWhiteSpace(existing?.Content);
-
-        // Con parsimonia: il profilo si crea presto la PRIMA volta, poi si rinfresca solo dopo
-        // abbastanza nuovi messaggi dall'ultimo aggiornamento (niente riscritture a ogni apertura).
-        if (hasProfile && userTurns - _userTurnsAtLastProfileUpdate < ProfileUpdateEveryNUserTurns)
-            return;
-
-        _profileUpdateRunning = true;
-        try
-        {
-            // Trascrizione come UN solo messaggio utente: così la richiesta termina con un turno utente.
-            var transcript = string.Join("\n", _history.Select(m =>
-                $"{(m.Role == ChatRole.User ? "User" : "Ruki")}: {m.Text}"));
-
-            var request = new LlmRequest
-            {
-                SystemInstruction = ProfileUpdatePrompt,
-                // Passiamo il profilo ATTUALE + la conversazione: il modello lo UNISCE, non lo sovrascrive.
-                Messages =
-                [
-                    new ChatMessage(ChatRole.User,
-                        "CURRENT profile (may be empty):\n"
-                        + (hasProfile ? existing!.Content : "(none)")
-                        + "\n\nRECENT conversation:\n" + transcript),
-                ],
-                Temperature = 0.2,   // aggiornamento fattuale: meno creatività
-            };
-
-            var profile = (await _llm.CompleteAsync(request, cancellationToken)).Text;
-            if (string.IsNullOrWhiteSpace(profile))
-                return;
-
-            UpsertProfile(profile.Trim());
-            _userTurnsAtLastProfileUpdate = userTurns;
-            _logger.LogInformation("Profilo utente aggiornato in memoria (merge, {Turns} turni utente).", userTurns);
-        }
-        finally
-        {
-            _profileUpdateRunning = false;
         }
     }
 
@@ -267,7 +202,6 @@ public sealed class OrchestratorAgent : IOrchestratorAgent
     public void Reset()
     {
         _history.Clear();
-        _userTurnsAtLastProfileUpdate = 0;
         _logger.LogInformation("Conversazione dell'orchestratore azzerata.");
     }
 
@@ -276,7 +210,7 @@ public sealed class OrchestratorAgent : IOrchestratorAgent
     {
         var instruction = BaseSystemPrompt + "\n\n" + DescribeState();
 
-        var profile = GetActiveProfileNode()?.Content;
+        var profile = _profile.GetActiveProfile();
         if (!string.IsNullOrWhiteSpace(profile))
             instruction += "\n\nKnown information about the user (from Ruki's memory):\n" + profile;
 
@@ -297,50 +231,7 @@ public sealed class OrchestratorAgent : IOrchestratorAgent
             "CURRENT STATE: normal chat — no teaching session and no task running.",
     };
 
-    /// <summary>Crea o aggiorna il nodo di memoria "Profilo utente".</summary>
-    private void UpsertProfile(string profile)
-    {
-        var existing = GetProfileNode();
-        if (existing is not null)
-        {
-            existing.Content = profile;
-            existing.Summary = FirstLine(profile);
-            _memory.Update(existing);
-        }
-        else
-        {
-            _memory.Add(new MemoryNode
-            {
-                Title = ProfileNodeTitle,
-                Type = MemoryNodeType.Memory,
-                Summary = FirstLine(profile),
-                Content = profile,
-            });
-        }
-    }
-
-    /// <summary>Cerca il nodo "Profilo utente" tra i nodi radice e ne carica il contenuto completo.</summary>
-    private MemoryNode? GetProfileNode()
-    {
-        var info = _memory.GetChildren(null)
-            .FirstOrDefault(n => string.Equals(n.Title, ProfileNodeTitle, StringComparison.OrdinalIgnoreCase));
-        return info is null ? null : _memory.GetNode(info.Id);
-    }
-
-    /// <summary>
-    /// Profilo utente solo se ATTIVO (non archiviato): se l'utente l'ha disattivato, è come se non
-    /// esistesse (niente "bentornato", niente iniezione nel prompt). Resta però aggiornabile.
-    /// </summary>
-    private MemoryNode? GetActiveProfileNode()
-        => GetProfileNode() is { IsObsolete: false } node ? node : null;
-
-    private static string FirstLine(string text)
-    {
-        var line = text.Split('\n', 2)[0].Trim();
-        return line.Length <= 120 ? line : line[..120] + "…";
-    }
-
-    /// <summary>Estrae risposta + eventuale obiettivo dal JSON del modello; in fallback, testo semplice.</summary>
+    /// <summary>Estrae risposta + eventuale obiettivo + eventuale nota profilo dal JSON; in fallback, testo semplice.</summary>
     private static OrchestratorReply ParseReply(string responseText)
     {
         // Ripara gli a capo grezzi nelle stringhe (le risposte di chat sono spesso multilinea):
@@ -352,7 +243,8 @@ public sealed class OrchestratorAgent : IOrchestratorAgent
             if (dto is not null && !string.IsNullOrWhiteSpace(dto.Reply))
                 return new OrchestratorReply(
                     dto.Reply.Trim(),
-                    string.IsNullOrWhiteSpace(dto.ActionGoal) ? null : dto.ActionGoal.Trim());
+                    string.IsNullOrWhiteSpace(dto.ActionGoal) ? null : dto.ActionGoal.Trim(),
+                    string.IsNullOrWhiteSpace(dto.ProfileNote) ? null : dto.ProfileNote.Trim());
         }
         catch (JsonException)
         {
@@ -375,5 +267,5 @@ public sealed class OrchestratorAgent : IOrchestratorAgent
         PropertyNameCaseInsensitive = true,
     };
 
-    private sealed record ReplyDto(string? Reply, string? ActionGoal);
+    private sealed record ReplyDto(string? Reply, string? ActionGoal, string? ProfileNote);
 }
