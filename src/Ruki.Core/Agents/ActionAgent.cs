@@ -34,9 +34,13 @@ public sealed class ActionAgent : IActionAgent
         screen (its size is given) and decide the NEXT single action based on what you see and on what
         has already happened in the conversation.
 
-        When possible PREFER KEYBOARD SHORTCUTS (more reliable than the mouse), including Windows ones:
-        Win+R (Run), Win+E (File Explorer), Win+D (desktop), Alt+Tab (switch window), Alt+F4 (close),
-        Ctrl+L (browser address bar), etc.
+        PREFER KEYBOARD SHORTCUTS over the mouse whenever you can, but ONLY ones you are SURE about:
+        - universal OS/Windows ones: Win+R (Run), Win+E (File Explorer), Win+D (desktop), Alt+Tab (switch
+          window), Alt+F4 (close), and standard editing ones (Ctrl+C/X/V/Z/Y, Ctrl+S save, Ctrl+F find,
+          Ctrl+A select all, Ctrl+L browser address bar);
+        - application-SPECIFIC shortcuts: use them only if you actually KNOW them — from Ruki's memory, or
+          shown in the app's own menus/tooltips. Do NOT guess app-specific shortcuts by analogy.
+        If you are not sure a shortcut exists in the current app, use the visible UI (menus, buttons) instead.
 
         MEMORY: at the start you receive Ruki's memory tree with titles (and summaries) ONLY. To dig
         deeper, before acting, use:
@@ -74,6 +78,10 @@ public sealed class ActionAgent : IActionAgent
         edges (y). A common mistake is getting x right but clicking too high or too low: estimate the
         element's full height and target its vertical middle, not its top edge or the text baseline. If a
         page needs to load, use "wait".
+
+        To scroll a page or list, USE the "scroll" action — do NOT click or drag the scrollbar (it is hard
+        to aim and unreliable): set x,y over the content you want to scroll and "amount" (positive = scroll
+        up, negative = scroll down).
 
         If the screenshot contains a SMALLER nested copy of the desktop (e.g. a screen-recording or
         mirroring preview such as OBS, a "share screen" thumbnail, or a remote-desktop window), that copy

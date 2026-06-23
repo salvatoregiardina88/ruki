@@ -14,6 +14,13 @@ Ruki lives as a small floating overlay. You can:
 
 It remembers what it learns in a tree-structured memory, and everything runs on **Google Gemini** using **your own API key**.
 
+## Screenshots
+
+| Chat that remembers you | Right alongside your apps | Runs the task for you |
+|:---:|:---:|:---:|
+| <img src="assets/screenshot-chat.png" width="280" alt="Ruki chat on the desktop" /> | <img src="assets/screenshot-context.png" width="280" alt="Ruki next to a document" /> | <img src="assets/screenshot-running.png" width="280" alt="Ruki executing a task" /> |
+| Welcome back — Ruki remembers you and how you work. | It sits next to your apps and helps in context. | Ask in plain language; Ruki runs it on your PC, with stop/pause always at hand. |
+
 ## Highlights
 
 - **Local-first & private.** There are no Ruki servers; your data stays on your PC and is only sent to Google Gemini (with your key). Password fields are masked during recording. See the [privacy policy](src/Ruki.App/Assets/privacy_en.txt).
