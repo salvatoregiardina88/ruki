@@ -2,6 +2,7 @@
   <img src="src/Ruki.App/Assets/Logo.png" width="96" alt="Ruki logo" />
   <h1>Ruki</h1>
   <p>A minimal Windows desktop AI assistant you can <b>teach</b> — and that then does the work for you, under your supervision.</p>
+  <img src="assets/screenshot-chat.png" width="280" alt="Ruki chat on the desktop" />
 </div>
 
 ---
@@ -16,10 +17,11 @@ It remembers what it learns in a tree-structured memory, and everything runs on 
 
 ## Screenshots
 
-| Chat that remembers you | Right alongside your apps | Runs the task for you |
-|:---:|:---:|:---:|
-| <img src="assets/screenshot-chat.png" width="280" alt="Ruki chat on the desktop" /> | <img src="assets/screenshot-context.png" width="280" alt="Ruki next to a document" /> | <img src="assets/screenshot-running.png" width="280" alt="Ruki executing a task" /> |
-| Welcome back — Ruki remembers you and how you work. | It sits next to your apps and helps in context. | Ask in plain language; Ruki runs it on your PC, with stop/pause always at hand. |
+# Learn what you teach from Video and Audio Recording Right alongside your apps 
+<div align="center"><img src="assets/screenshot-context.png" width="700" alt="Ruki next to a document" /></div>
+
+# Runs the task for you using your PC
+<div align="center"><img src="assets/screenshot-running.png" width="700" alt="Ruki executing a task" /></div>
 
 ## Highlights
 
