@@ -17,7 +17,7 @@ It remembers what it learns in a tree-structured memory, and everything runs on 
 
 ## Screenshots
 
-# Learn what you teach from Video and Audio Recording Right alongside your apps 
+# Learn what you teach from Video and Audio Recording
 <div align="center"><img src="assets/screenshot-context.png" width="700" alt="Ruki next to a document" /></div>
 
 # Runs the task for you using your PC
